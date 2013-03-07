@@ -11,8 +11,10 @@ hp_names = map (\n -> "_hp_" ++ show n) [0::Integer ..]
 -- | Regular expression to match a /hash paren/ expression.
 --
 -- > matchRegexAll hp_regex "#(a)" == Just ("","#(a)","",["a"])
+-- > matchRegexAll hp_regex "#(a) #(b)"
+-- > matchRegexAll hp_regex "return (#(a))"
 hp_regex :: Regex
-hp_regex = mkRegex "#\\(([^#)]*)\\)+"
+hp_regex = mkRegex "#\\(([^#()]*)\\)"
 
 -- | Run 'hp_regex' matcher.
 --
@@ -33,6 +35,8 @@ indent_of = takeWhile (== ' ')
 --
 -- > let r = ["  _hp_0 <- b","  _hp_1 <- c","  a <- f _hp_0 _hp_1"]
 -- > in snd (hp_line hp_names [] "  a <- f #(b) #(c)") == r
+--
+-- > snd (hp_line hp_names [] "  return (f #(a))")
 hp_line :: [String] -> [String] -> String -> ([String], [String])
 hp_line n r s =
     case hp_match s of

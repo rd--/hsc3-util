@@ -6,7 +6,7 @@ prefix = ~/opt
 all: hash-paren
 
 install:
-	cp hash-paren $(prefix)/bin
+	cp hash-paren $(prefix)/bin/hsc3-hash-paren
 
 clean:
 	rm -f *.hi *.o

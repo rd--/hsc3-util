@@ -1,0 +1,28 @@
+hsc3-utils - haskell supercollider3 utilities
+---------------------------------------------
+
+[hsc3][hsc3] related utility programs.
+
+`hash-paren` is a simple minded [haskell][hs] pre-processor that
+extends the haskell `do` syntax by rewriting `#` parenthesised
+expressions as monadic bindings.  Ie.
+
+    do ...
+       c <- f #(a) #(b)
+       ...
+
+is rewritten as:
+
+    do ...
+       _hp_0 <- a
+       _hp_1 <- b
+       c <- f _hp_0 _hp_1
+       ...
+
+[hsc3]: http://rd.slavepianos.org/?t=hsc3
+[hs]: http://haskell.org/
+
+© [rohan drape][rd], 2013, [gpl][gpl].
+
+[rd]: http://rd.slavepianos.org/
+[gpl]: http://gnu.org/copyleft/
