@@ -1,4 +1,4 @@
-prefix = ~/opt
+prefix = ~/.cabal
 
 % : %.hs
 	ghc -Wall -fwarn-tabs --make $<
