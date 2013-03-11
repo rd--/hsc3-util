@@ -1,9 +1,11 @@
 import Control.Monad
-import Data.Char {- base -}
-import Data.List {- base -}
+import Data.Char
+import Data.Function
+import Data.List
+import Data.Maybe
 import qualified Data.List.Split as S {- split -}
 import Text.ParserCombinators.Poly.State {- polyparse -}
-import System.Environment {- base -}
+import System.Environment
 
 -- | Return indentation of line.
 --
@@ -45,65 +47,95 @@ hp_names = map (\n -> "_hp_" ++ show n) [0::Integer ..]
 has_hash_paren :: String -> Bool
 has_hash_paren = isInfixOf " #("
 
-type HP = Parser Int Char
+type ST = (Int,[Int])
+type HP = Parser ST Char
 
-hp_next :: HP Char
+hp_st :: ST
+hp_st = (0,[])
+
+safe_head :: [a] -> Maybe a
+safe_head l =
+    case l of
+      [] -> Nothing
+      e:_ -> Just e
+
+-- | Only count parens in #().
+hp_next :: HP (Char,Maybe Int)
 hp_next = do
+  let stPut st = stUpdate (const st)
   c <- next
-  when (c == '(') (stUpdate succ)
-  when (c == ')') (stUpdate pred)
-  return c
+  (n,h) <- stGet
+  case c of
+    '#' -> stPut (n,n : h) >> return (c,Just n)
+    '(' -> stPut (if null h then (n,h) else (n + 1,h)) >> return (c,safe_head h)
+    ')' -> let n' = n - 1
+               (st',e) = case h of
+                           [] -> ((n,[]),Nothing)
+                           x:h' -> if x == n'
+                                   then ((n',h'),Just x)
+                                   else ((n',h),safe_head h)
+           in stPut st' >> return (c,e)
+    _ -> return (c,safe_head h)
 
-hp_open :: HP Char
-hp_open = do
-  c <- hp_next
-  n <- stGet
-  if (c == '(' && n == 1) then return c else fail "hp_open"
+type HP_Char = (Char,Maybe Int)
+type HP_String = [HP_Char]
 
-hp_close :: HP Char
-hp_close = do
-  c <- hp_next
-  n <- stGet
-  if (c == ')' && n == 0) then return c else fail "hp_close"
+-- > runParser hp_hash_paren hp_st "r <- #(a)"
+-- > runParser hp_hash_paren hp_st "#(a (b)) (c (d))"
+-- > runParser hp_hash_paren hp_st "#(a (b) (c (d)))"
+-- > runParser hp_hash_paren hp_st "#a"
+-- > runParser hp_hash_paren hp_st "a"
+-- > runParser hp_hash_paren hp_st "c <- f #(a) #(b c) d"
+-- > runParser hp_hash_paren hp_st "c <- f #(a) #(b #(c)) d"
+-- > runParser hp_hash_paren hp_st "c <- f #(a) #(b #(c #(d e) f) #(g)) #(h) i"
+hp_hash_paren :: HP HP_String
+hp_hash_paren = many1 hp_next
 
--- > runParser hp_balance_paren 0 "(a (b) (c (d)))"
--- > runParser hp_balance_paren 0 "(a (b)) c (d)"
-hp_balance_paren :: HP String
-hp_balance_paren = hp_open *> manyFinally' hp_next hp_close
+-- > hp_parse "c <- f #(a) #(b #(c #(d e) f) g) h"
+hp_parse :: String -> HP_String
+hp_parse s =
+    case runParser hp_hash_paren hp_st s of
+      (Right r,(0,[]),[]) -> r
+      _ -> error "hp_parse"
 
--- > runParser hp_hash_paren 0 "#(a (b) (c (d)))"
--- > runParser hp_hash_paren 0 "#a"
--- > runParser hp_hash_paren 0 "a"
-hp_hash_paren :: HP String
-hp_hash_paren = satisfy (== '#') *> hp_balance_paren
+-- | Left biased 'max' variant.
+--
+-- > maxBy last "cat" "mouse" == "cat"
+-- > maxBy last "aa" "za" == "aa"
+max_by :: Ord a => (t -> a) -> t -> t -> t
+max_by f p q = if f q > f p then q else p
 
--- > runParser hp_parser 0 "c <- f #(a)"
-hp_parser :: HP [Either Char String]
-hp_parser = many1 (oneOf [fmap Right hp_hash_paren,fmap Left next])
-
+-- > replace_first 1 (-1) [-2,1,0,1] == [-2 .. 1]
+replace_first :: Eq a => a -> a -> [a] -> [a]
+replace_first p q =
+    let rec r l = case l of
+                  [] -> reverse r
+                  e:l' -> if e == p then reverse (q : r) ++ l' else rec (e : r) l'
+    in rec []
 
 type Binding = (String,String)
 type Name_Supply = [String]
 
-hp_gen_bindings :: Name_Supply -> [Either Char String] -> (Name_Supply,[Binding])
-hp_gen_bindings nm =
-    let rec n r l =
-            case l of
-              [] -> (n,reverse r)
-              Left _:l' -> rec n r l'
-              Right p:l' -> let n0:n' = n
-                            in rec n' ((n0,p) : r) l'
-    in rec nm []
+-- > un_hash_paren "#(a)" == "a"
+-- > un_hash_paren "b" == "b"
+un_hash_paren :: String -> String
+un_hash_paren s =
+    let f = reverse . drop 1 . reverse
+    in case s of
+         '#' : '(' : s' -> f s'
+         _ -> s
 
-hp_gen_rewrite :: [Binding] -> [Either Char String] -> String
-hp_gen_rewrite bnd =
-    let rec b s r =
-            case r of
-              [] -> reverse s
-              Left c:r' -> rec b (c : s) r'
-              Right _:r' -> let (n,_):b' = b
-                            in rec b' (reverse n ++ s) r'
-    in rec bnd []
+hp_next_binding :: Name_Supply -> HP_String -> Maybe (Name_Supply,Binding,HP_String)
+hp_next_binding n s =
+    if null s || all ((== Nothing) . snd) s
+    then Nothing
+    else let nm:n' = n
+             s' = groupBy ((==) `on` snd) s
+             e = foldl1 (max_by (fromMaybe (-1) . snd . head)) s'
+             x = fromJust (snd (head e)) - 1
+             x' = if x >= 0 then Just x else Nothing
+             s'' = replace_first e (map (\c -> (c,x')) nm) s'
+         in Just (n',(nm,un_hash_paren (map fst e)),concat s'')
 
 -- | Process one line of /hash-paren/ re-writes.
 --
@@ -112,12 +144,16 @@ hp_gen_rewrite bnd =
 --
 -- > let r = ([("_hp_0","a")],"  return (f _hp_0)")
 -- > in snd (hp_analyse hp_names "  return (f #(a))") == r
+--
+-- > let r = ([("_hp_0","d e"),("_hp_1","c _hp_0 f"),("_hp_2","a"),("_hp_3","b _hp_1 g")]
+-- >         ,"c <- f (_hp_2,_hp_3) h")
+-- > in snd (hp_analyse hp_names "c <- f (#(a),#(b #(c #(d e) f) g)) h") == r
 hp_analyse :: Name_Supply -> String -> (Name_Supply,([Binding],String))
-hp_analyse nm s =
-    case runParser hp_parser 0 s of
-      (Right r,0,[]) -> let (nm',b) = hp_gen_bindings nm r
-                        in (nm',(b,hp_gen_rewrite b r))
-      _ -> error "hp_analyse"
+hp_analyse nm =
+    let rec n b s = case hp_next_binding n s of
+                      Nothing -> (n,(reverse b,map fst s))
+                      Just (n',b',s') -> rec n' (b':b) s'
+    in rec nm [] . hp_parse
 
 -- | Re-construct 'hp_analyse' output.
 hp_build :: ([Binding],String) -> [String]
@@ -141,7 +177,7 @@ hp_line n s =
 -- > hp_rewrite ["main = do"
 -- >            ,"  let a = f #(b) #(c)"
 -- >            ,"  d <- e"
--- >            ,"  p <- g #(q r) #(s (t u))"
+-- >            ,"  p <- g #(q r) #(s #(t u))"
 -- >            ,"  return (h #(v w))"]
 hp_rewrite :: [String] -> [String]
 hp_rewrite =
