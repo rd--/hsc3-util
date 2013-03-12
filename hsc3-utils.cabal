@@ -24,9 +24,16 @@ executable hsc3-hash-paren
 
 executable hsc3-id-rewrite
   build-depends:   base == 4.*,
-                   hsc3 == 0.14.*
+                   hsc3-rw == 0.14.*
   hs-source-dirs:  hs
   main-is:         id-rewrite.hs
+  ghc-options:     -Wall -fwarn-tabs
+
+executable hsc3-id-clear
+  build-depends:   base == 4.*,
+                   hsc3-rw == 0.14.*
+  hs-source-dirs:  hs
+  main-is:         id-clear.hs
   ghc-options:     -Wall -fwarn-tabs
 
 Source-Repository  head
