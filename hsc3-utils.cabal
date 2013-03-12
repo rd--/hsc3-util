@@ -17,8 +17,7 @@ Data-files:        README
 
 executable hsc3-hash-paren
   build-depends:   base == 4.*,
-                   polyparse,
-                   split
+                   hsc3-rw == 0.14.*
   hs-source-dirs:  hs
   main-is:         hash-paren.hs
   ghc-options:     -Wall -fwarn-tabs
