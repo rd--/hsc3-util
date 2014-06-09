@@ -26,6 +26,13 @@ Library
   GHC-Options:     -Wall -fwarn-tabs
   Exposed-modules: Sound.SC3.Server.Buffer.Send
 
+executable hsc3-hash-at
+  build-depends:   base == 4.*,
+                   hsc3-rw == 0.15.*
+  hs-source-dirs:  hs
+  main-is:         hash-at.hs
+  ghc-options:     -Wall -fwarn-tabs
+
 executable hsc3-hash-paren
   build-depends:   base == 4.*,
                    hsc3-rw == 0.15.*
