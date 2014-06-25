@@ -54,6 +54,16 @@ executable hsc3-id-clear
   main-is:         id-clear.hs
   ghc-options:     -Wall -fwarn-tabs
 
+executable hsc3-scsyndef-to-dot
+  build-depends:   base == 4.*,
+                   filepath,
+                   hsc3-dot == 0.15.*,
+                   hsc3 == 0.15.*,
+                   process
+  hs-source-dirs:  hs
+  main-is:         scsyndef-to-dot.hs
+  ghc-options:     -Wall -fwarn-tabs
+
 Source-Repository  head
   Type:            darcs
   Location:        http://rd.slavepianos.org/sw/hsc3-utils/
