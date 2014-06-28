@@ -27,7 +27,7 @@ d_load s
 d_loadDir s
 d_recv b
 dumpOSC e e:PrintLevel
-errorMode ee e:ErrorScope e:ErrorMode
+errorMode ee e:ErrorScope,e:ErrorMode
 g_deepFree [i]
 g_dumpTree [ip]
 g_freeAll [i]
