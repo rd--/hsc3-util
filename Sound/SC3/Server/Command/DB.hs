@@ -2,24 +2,31 @@ import Data.List
 import Data.Maybe
 import Text.ParserCombinators.Parsec {- parsec -}
 
-data Sig = Atom Char
-         | List Sig
-         | Seq [Sig]
+data Sig a = Atom a
+           | List (Sig a)
+           | Seq [Sig a]
            deriving (Eq,Show)
 
-sig_atoms :: Sig -> [Char]
+sig_map :: (t -> a) -> Sig t -> Sig a
+sig_map f s =
+    case s of
+      Atom a -> Atom (f a)
+      List s' -> List (sig_map f s')
+      Seq s' -> Seq (map (sig_map f) s')
+
+sig_atoms :: Sig a -> [a]
 sig_atoms s =
     case s of
       Atom a -> [a]
       List s' -> sig_atoms s'
       Seq s' -> concatMap sig_atoms s'
 
-sig_atoms_set :: Sig -> [Char]
+sig_atoms_set :: Ord a => Sig a -> [a]
 sig_atoms_set = nub . sort . sig_atoms
 
 type P a = GenParser Char () a
 
-p_atom :: P Sig
+p_atom :: P (Sig Char)
 p_atom = fmap Atom (oneOf "ifsbped." <?> "p_atom")
 
 p_brackets :: P a -> P a
@@ -29,20 +36,20 @@ p_brackets p = do
   _ <- char ']'
   return r
 
-p_list :: P Sig
+p_list :: P (Sig Char)
 p_list = fmap List (p_brackets p_sig)
 
-p_sig :: P Sig
+p_sig :: P (Sig Char)
 p_sig = fmap Seq (many1 (choice [p_atom,p_list]))
 
-parse_sig :: String -> String -> Either ParseError Sig
+parse_sig :: String -> String -> Either ParseError (Sig Char)
 parse_sig = parse p_sig
 
 -- > sig_words (parse_sig_err "i")
 -- > sig_words (parse_sig_err "[if]")
 -- > sig_words (parse_sig_err "i[f]")
 -- > sig_words (parse_sig_err "if[s.]e")
-parse_sig_err :: String -> Sig
+parse_sig_err :: String -> Sig Char
 parse_sig_err s =
     case parse_sig "parse_sig_err" s of
       Left err -> error (show err)
@@ -54,11 +61,11 @@ add_brackets s = concat ["[",s,"]"]
 add_paren :: String -> String
 add_paren s = if null s then [] else concat ["(",s,")"]
 
-sig_words :: Sig -> String
-sig_words =
+sig_words :: (a -> String) -> Sig a -> String
+sig_words f =
     let go in_list s =
             case s of
-              Atom c -> [c]
+              Atom c -> f c
               Seq l -> intercalate (if in_list then "," else " -> ") (map (go in_list) l)
               List (Seq [e]) -> add_brackets (go True e)
               List s' -> add_brackets (add_paren (go True s'))
@@ -75,22 +82,30 @@ mk_generic s =
       nm:sig:_ ->
           let sig' = parse_sig_err sig
               cls = sig_atoms_set sig'
-          in nm ++ " :: " ++ gen_classes cls ++ sig_words sig' ++ " -> Message"
+              sig'' = sig_liftc_generic sig'
+          in nm ++ " :: " ++ gen_classes cls ++ sig_words id sig'' ++ " -> Message"
 
 typec :: Char -> (String,String,String)
 typec c =
     case c of
       'i' -> ("Integral","Int32","Int")
       'f' -> ("Real","Float","Double")
-      's' -> ("IsString","ASCII","String")
+      's' -> ("","ASCII","String")
       'b' -> ("","Blob","ByteString")
       'p' -> ("","Int32","Bool")
-      'e' -> ("","","")
+      'e' -> ("","","Enum")
       '.' -> ("","Datum","Datum")
       _ -> error "typec"
 
+sig_liftc_generic :: Sig Char -> Sig String
+sig_liftc_generic =
+    let f c = case typec c of
+                ("",_,r) -> r
+                _ -> [c]
+    in sig_map f
+
 -- > gen_classes ""
--- > gen_classes "ifs"
+-- > gen_classes "if"
 gen_classes :: [Char] -> String
 gen_classes s =
     let f c = case typec c of
