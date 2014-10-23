@@ -1,5 +1,5 @@
 Name:              hsc3-utils
-Version:           0.15
+Version:           0.16
 Synopsis:          Haskell SuperCollider Utilities
 Description:       Haskell SuperCollider Utilities
 License:           GPL
@@ -20,36 +20,36 @@ Library
                    directory,
                    filepath,
                    hashable,
-                   hosc == 0.15.*,
-                   hsc3 == 0.15.*,
-                   hsc3-sf == 0.15.*
+                   hosc == 0.16.*,
+                   hsc3 == 0.16.*,
+                   hsc3-sf == 0.16.*
   GHC-Options:     -Wall -fwarn-tabs
   Exposed-modules: Sound.SC3.Server.Buffer.Send
 
 executable hsc3-hash-at
   build-depends:   base == 4.*,
-                   hsc3-rw == 0.15.*
+                   hsc3-rw == 0.16.*
   hs-source-dirs:  hs
   main-is:         hash-at.hs
   ghc-options:     -Wall -fwarn-tabs
 
 executable hsc3-hash-paren
   build-depends:   base == 4.*,
-                   hsc3-rw == 0.15.*
+                   hsc3-rw == 0.16.*
   hs-source-dirs:  hs
   main-is:         hash-paren.hs
   ghc-options:     -Wall -fwarn-tabs
 
 executable hsc3-id-rewrite
   build-depends:   base == 4.*,
-                   hsc3-rw == 0.15.*
+                   hsc3-rw == 0.16.*
   hs-source-dirs:  hs
   main-is:         id-rewrite.hs
   ghc-options:     -Wall -fwarn-tabs
 
 executable hsc3-id-clear
   build-depends:   base == 4.*,
-                   hsc3-rw == 0.15.*
+                   hsc3-rw == 0.16.*
   hs-source-dirs:  hs
   main-is:         id-clear.hs
   ghc-options:     -Wall -fwarn-tabs
@@ -57,8 +57,8 @@ executable hsc3-id-clear
 executable hsc3-scsyndef-to-dot
   build-depends:   base == 4.*,
                    filepath,
-                   hsc3-dot == 0.15.*,
-                   hsc3 == 0.15.*,
+                   hsc3-dot == 0.16.*,
+                   hsc3 == 0.16.*,
                    process
   hs-source-dirs:  hs
   main-is:         scsyndef-to-dot.hs
