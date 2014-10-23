@@ -64,6 +64,13 @@ executable hsc3-scsyndef-to-dot
   main-is:         scsyndef-to-dot.hs
   ghc-options:     -Wall -fwarn-tabs
 
+executable hsc3-sexp
+  build-depends:   base == 4.*,
+                   hsc3-rw == 0.16.*
+  hs-source-dirs:  hs
+  main-is:         sexp.hs
+  ghc-options:     -Wall -fwarn-tabs
+
 Source-Repository  head
   Type:            darcs
   Location:        http://rd.slavepianos.org/sw/hsc3-utils/
