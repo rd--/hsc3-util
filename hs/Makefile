@@ -1,5 +1,5 @@
 prefix = ~/.cabal
-cmd = hash-paren id-clear id-rewrite psynth uparam
+cmd = hash-paren id-clear id-rewrite psynth uparam sexp
 
 % : %.hs
 	ghc -Wall -fwarn-tabs --make $<
@@ -12,6 +12,7 @@ install:
 	cp id-rewrite $(prefix)/bin/hsc3-id-rewrite
 	cp psynth $(prefix)/bin/hsc3-psynth
 	cp uparam $(prefix)/bin/hsc3-uparam
+	cp sexp $(prefix)/bin/hsc3-sexp
 
 clean:
 	rm -f *.hi *.o
