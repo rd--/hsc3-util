@@ -2,9 +2,9 @@ hsc3-utils - haskell supercollider3 utilities
 ---------------------------------------------
 
 [hsc3](?t=hsc3) related utility programs.
+Each gets an `hsc3-` prefix before installation.
 
-The following are executables for functions at [hsc3-rw](?t=hsc3-rw),
-the commands get an `hsc3-` prefix before installation.
+The following are executables for functions at [hsc3-rw](?t=hsc3-rw):
 
 - hsc3-[hash-at](?t=hsc3-rw&e=md/hash-at.md) (June, 2014)
 - hsc3-[hash-paren](?t=hsc3-rw&e=md/hash-paren.md) (March, 2013)
@@ -17,6 +17,10 @@ There is also a set of `scsyndef` _disassemblers_:
 - hsc3-scsyndef-[to-dot](?t=hsc3-utils&e=md/scsyndef-to-dot.md) (June, 2014)
 - hsc3-scsyndef-[to-fs](?t=hsc3-utils&e=md/scsyndef-to-fs.md) (October, 2014)
 - hsc3-scsyndef-[to-hs](?t=hsc3-utils&e=md/scsyndef-to-hs.md) (July, 2012)
+
+and a statistics printer:
+
+- hsc3-scsyndef-[stat](?t=hsc3-utils&e=md/scsyndef-stat.md) (October, 2014)
 
 © [rohan drape][rd], 2013-2014, [gpl][gpl].
 

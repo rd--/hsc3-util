@@ -1,6 +1,6 @@
 prefix = ~/.cabal
 cmd =	hash-paren id-clear id-rewrite psynth uparam sexp \
-	scsyndef-to-dot scsyndef-to-fs scsyndef-to-hs
+	scsyndef-stat scsyndef-to-dot scsyndef-to-fs scsyndef-to-hs
 cmd_i = $(addprefix hsc3-, $(cmd))
 
 % : %.hs

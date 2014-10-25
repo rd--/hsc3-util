@@ -23,7 +23,7 @@ which is printed as:
 
 # Rationale
 
-Used to aid in translating JMcC’s SC2 examples from haskell to FORTH,
+Used to help translate JMcC’s SC2 examples from haskell to FORTH,
 see [hsc3-graphs](?t=hsc3-graphs).
 
 # Caveat

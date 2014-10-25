@@ -21,11 +21,11 @@ why_supercollider =
     in out 0 (s + 0.2 * x)
 ~~~~
 
-The _reconstruction_ of the binary encoding of this graph,
-[why_supercollider.scsyndef](sw/hsc3-graphs/scsyndef/why_supercollider.scsyndef),
-in _plain_ notation is:
+The transcript below prints the _reconstruction_ of the binary
+encoding of this graph in _plain_ notation:
 
 ~~~~
+$ hsc3-scsyndef-to-hs ~/sw/hsc3-graphs/scsyndef/why_supercollider.scsyndef
 import Sound.SC3
 import Sound.SC3.Common
 import Sound.SC3.UGen.Plain
@@ -237,4 +237,5 @@ why_supercollider =
       u_199 = binop CS "+" AR u_54 u_198
       u_200 = nondet "Out" (UId 200) AR [c_11,u_193,u_199] 0
   in u_200
+$
 ~~~~
