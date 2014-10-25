@@ -6,8 +6,10 @@ hsc3-utils - haskell supercollider3 utilities
 The following are executables for functions at [hsc3-rw](?t=hsc3-rw),
 the commands get an `hsc3-` prefix before installation.
 
+- hsc3-[hash-at](?t=hsc3-rw&e=md/hash-at.md) (June, 2014)
 - hsc3-[hash-paren](?t=hsc3-rw&e=md/hash-paren.md) (March, 2013)
 - hsc3-[psynth](?t=hsc3-rw&e=md/psynth.md) (June, 2014)
+- hsc3-[sexp](?t=hsc3-rw&e=md/sexp.md) (October, 2014)
 - hsc3-[uparam](?t=hsc3-rw&e=md/uparam.md) (June, 2014)
 
 © [rohan drape][rd], 2013-2014, [gpl][gpl].
