@@ -64,6 +64,14 @@ executable hsc3-scsyndef-to-dot
   main-is:         scsyndef-to-dot.hs
   ghc-options:     -Wall -fwarn-tabs
 
+executable hsc3-scsyndef-to-hs
+  build-depends:   base == 4.*,
+                   filepath,
+                   hsc3 == 0.16.*
+  hs-source-dirs:  hs
+  main-is:         scsyndef-to-hs.hs
+  ghc-options:     -Wall -fwarn-tabs
+
 executable hsc3-sexp
   build-depends:   base == 4.*,
                    hsc3-rw == 0.16.*

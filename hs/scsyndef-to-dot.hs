@@ -7,7 +7,7 @@ import qualified Sound.SC3.Server.Graphdef as R {- hsc3 -}
 import qualified Sound.SC3.Server.Graphdef.Read as R {- hsc3 -}
 
 import Sound.SC3.UGen.Dot {- hsc3-dot -}
-import qualified Sound.SC3.UGen.Dot.Internal as D
+import qualified Sound.SC3.UGen.Dot.Internal as D {- hsc3-dot -}
 
 scsyndef_to_dot :: Bool -> FilePath -> IO ()
 scsyndef_to_dot opt sy_nm = do

@@ -1,19 +1,20 @@
 prefix = ~/.cabal
-cmd = hash-paren id-clear id-rewrite psynth uparam sexp
+cmd =	hash-paren id-clear id-rewrite psynth uparam sexp \
+	scsyndef-to-dot scsyndef-to-fs scsyndef-to-hs
+cmd_i = $(addprefix hsc3-, $(cmd))
 
 % : %.hs
 	ghc -Wall -fwarn-tabs --make $<
 
+hsc3-% : %
+	cp $< hsc3-$<
+
 all: $(cmd)
 
-install:
-	cp hash-paren $(prefix)/bin/hsc3-hash-paren
-	cp id-clear $(prefix)/bin/hsc3-id-clear
-	cp id-rewrite $(prefix)/bin/hsc3-id-rewrite
-	cp psynth $(prefix)/bin/hsc3-psynth
-	cp uparam $(prefix)/bin/hsc3-uparam
-	cp sexp $(prefix)/bin/hsc3-sexp
+install: $(cmd_i)
+	cp hsc3-* $(prefix)/bin
 
 clean:
 	rm -f *.hi *.o
 	rm -f $(cmd)
+	rm -f $(cmd_i)
