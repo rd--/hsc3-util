@@ -15,7 +15,7 @@ scsyndef_to_dot opt sy_nm = do
   let dot_nm = replaceExtension sy_nm "dot"
       svg_nm = replaceExtension sy_nm "svg"
       (_,gr') = R.graphdef_to_graph gr
-      dr = D.dotGraph svg_options gr'
+      dr = D.dotGraph (if opt then svg_options else dot_options) gr'
   writeFile dot_nm dr
   when opt (void (rawSystem "dot" ["-T","svg",dot_nm,"-o",svg_nm]))
   return ()
