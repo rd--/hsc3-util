@@ -46,15 +46,17 @@ hsc3-setup rebuild all ~/sw
 
 # bootstrap
 
-To setup all _hsc3_ packages on a new machine:
+To setup all _hsc3_ packages on a new machine, given _darcs_ & _ghc_ &
+_cabal_, and setting LOCAL appropriately:
 
 ~~~~
-DIR=...
-RMT=http://rd.slavepianos.org/sw
-mkdir -p $DIR
-cd $DIR
-darcs get $RMT/hsc3-utils/
+LOCAL=...
+REMOTE=http://rd.slavepianos.org/sw
+mkdir -p $LOCAL
+cd $LOCAL
+darcs get $REMOTE/hsc3-utils/
 (cd hsc3-utils ; make build-setup)
-hsc3-setup clone all $RMT $DIR
-hsc3-setup rebuild all $DIR
+hsc3-setup clone all $REMOTE $LOCAL
+hsc3-setup unregister all
+hsc3-setup rebuild all $LOCAL
 ~~~~

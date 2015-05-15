@@ -10,8 +10,7 @@ core = ["hosc","hsc3"]
 
 plain :: [String]
 plain =
-    ["hsc3-auditor"
-    ,"hsc3-db","hsc3-dot"
+    ["hsc3-db","hsc3-dot"
     ,"hsc3-lang"
     ,"hsc3-plot"
     ,"hsc3-sf","hsc3-sf-hsndfile"
