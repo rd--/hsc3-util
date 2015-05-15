@@ -1,6 +1,7 @@
 prefix = ~/.cabal
 cmd =	hash-paren id-clear id-rewrite psynth uparam sexp \
-	scsyndef-stat scsyndef-to-dot scsyndef-to-fs scsyndef-to-hs
+	scsyndef-stat scsyndef-to-dot scsyndef-to-fs scsyndef-to-hs \
+	setup
 cmd_i = $(addprefix hsc3-, $(cmd))
 
 % : %.hs
@@ -18,3 +19,7 @@ clean:
 	rm -f *.hi *.o
 	rm -f $(cmd)
 	rm -f $(cmd_i)
+
+build-setup:
+	make setup
+	cp setup $(prefix)/bin/hsc3-setup

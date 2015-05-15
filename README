@@ -18,11 +18,15 @@ There is also a set of `scsyndef` _disassemblers_:
 - hsc3-scsyndef-[to-fs](?t=hsc3-utils&e=md/scsyndef-to-fs.md) (October, 2014)
 - hsc3-scsyndef-[to-hs](?t=hsc3-utils&e=md/scsyndef-to-hs.md) (July, 2012)
 
-and a statistics printer:
+a statistics printer:
 
 - hsc3-scsyndef-[stat](?t=hsc3-utils&e=md/scsyndef-stat.md) (October, 2014)
 
-© [rohan drape][rd], 2013-2014, [gpl][gpl].
+and a setup manager:
+
+- hsc3-[setup](?t=hsc3-utils&e=md/setup.md) (May, 2015)
+
+© [rohan drape][rd], 2013-2015, [gpl][gpl].
 
 [rd]: http://rd.slavepianos.org/
 [gpl]: http://gnu.org/copyleft/

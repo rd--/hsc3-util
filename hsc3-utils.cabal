@@ -4,12 +4,12 @@ Synopsis:          Haskell SuperCollider Utilities
 Description:       Haskell SuperCollider Utilities
 License:           GPL
 Category:          Sound
-Copyright:         (c) Rohan Drape, 2013-2014
+Copyright:         (c) Rohan Drape, 2013-2015
 Author:            Rohan Drape
 Maintainer:        rd@slavepianos.org
 Stability:         Experimental
 Homepage:          http://rd.slavepianos.org/t/hsc3-utils
-Tested-With:       GHC == 7.8.2
+Tested-With:       GHC == 7.10.1
 Build-Type:        Simple
 Cabal-Version:     >= 1.8
 
@@ -70,6 +70,16 @@ executable hsc3-scsyndef-to-hs
                    hsc3 == 0.16.*
   hs-source-dirs:  hs
   main-is:         scsyndef-to-hs.hs
+  ghc-options:     -Wall -fwarn-tabs
+
+executable hsc3-setup
+  build-depends:   directory,
+                   base == 4.*,
+                   filepath,
+                   hsc3-rw == 0.16.*,
+                   process
+  hs-source-dirs:  hs
+  main-is:         setup.hs
   ghc-options:     -Wall -fwarn-tabs
 
 executable hsc3-sexp
