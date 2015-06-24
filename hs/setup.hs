@@ -87,4 +87,4 @@ main = do
     ["rebuild",nm,dir] -> s_with_all nm dir (\pkg -> ("cabal","install" : pkg))
     ["unregister",nm] -> s_at_each nm Nothing (\pkg -> ("ghc-pkg",["unregister","--force",pkg]))
     ["update",nm,src,dst] -> s_update nm src dst
-    _ -> putStrLn "hsc3-setup {clone|echo|local|unregister|update}"
+    _ -> putStrLn "hsc3-setup {clone|echo|local|rebuild|unregister|update}"

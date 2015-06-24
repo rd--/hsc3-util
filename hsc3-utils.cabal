@@ -89,6 +89,13 @@ executable hsc3-sexp
   main-is:         sexp.hs
   ghc-options:     -Wall -fwarn-tabs
 
+executable hsc3-default-param
+  build-depends:   base == 4.*,
+                   hsc3-db == 0.16.*
+  hs-source-dirs:  hs
+  main-is:         default-param.hs
+  ghc-options:     -Wall -fwarn-tabs
+
 Source-Repository  head
   Type:            darcs
   Location:        http://rd.slavepianos.org/sw/hsc3-utils/

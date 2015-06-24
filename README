@@ -22,6 +22,10 @@ a statistics printer:
 
 - hsc3-scsyndef-[stat](?t=hsc3-utils&e=md/scsyndef-stat.md) (October, 2014)
 
+a UGen default parameter printer:
+
+- hsc3-[default-param](?t=hsc3-utils&e=md/default-param.md) (June, 2015)
+
 and a setup manager:
 
 - hsc3-[setup](?t=hsc3-utils&e=md/setup.md) (May, 2015)
