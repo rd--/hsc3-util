@@ -29,28 +29,28 @@ Library
 executable hsc3-hash-at
   build-depends:   base == 4.*,
                    hsc3-rw == 0.16.*
-  hs-source-dirs:  hs
+  hs-source-dirs:  cmd
   main-is:         hash-at.hs
   ghc-options:     -Wall -fwarn-tabs
 
 executable hsc3-hash-paren
   build-depends:   base == 4.*,
                    hsc3-rw == 0.16.*
-  hs-source-dirs:  hs
+  hs-source-dirs:  cmd
   main-is:         hash-paren.hs
   ghc-options:     -Wall -fwarn-tabs
 
 executable hsc3-id-rewrite
   build-depends:   base == 4.*,
                    hsc3-rw == 0.16.*
-  hs-source-dirs:  hs
+  hs-source-dirs:  cmd
   main-is:         id-rewrite.hs
   ghc-options:     -Wall -fwarn-tabs
 
 executable hsc3-id-clear
   build-depends:   base == 4.*,
                    hsc3-rw == 0.16.*
-  hs-source-dirs:  hs
+  hs-source-dirs:  cmd
   main-is:         id-clear.hs
   ghc-options:     -Wall -fwarn-tabs
 
@@ -60,7 +60,7 @@ executable hsc3-scsyndef-to-dot
                    hsc3-dot == 0.16.*,
                    hsc3 == 0.16.*,
                    process
-  hs-source-dirs:  hs
+  hs-source-dirs:  cmd
   main-is:         scsyndef-to-dot.hs
   ghc-options:     -Wall -fwarn-tabs
 
@@ -68,7 +68,7 @@ executable hsc3-scsyndef-to-hs
   build-depends:   base == 4.*,
                    filepath,
                    hsc3 == 0.16.*
-  hs-source-dirs:  hs
+  hs-source-dirs:  cmd
   main-is:         scsyndef-to-hs.hs
   ghc-options:     -Wall -fwarn-tabs
 
@@ -78,21 +78,21 @@ executable hsc3-setup
                    filepath,
                    hsc3-rw == 0.16.*,
                    process
-  hs-source-dirs:  hs
+  hs-source-dirs:  cmd
   main-is:         setup.hs
   ghc-options:     -Wall -fwarn-tabs
 
 executable hsc3-sexp
   build-depends:   base == 4.*,
                    hsc3-rw == 0.16.*
-  hs-source-dirs:  hs
+  hs-source-dirs:  cmd
   main-is:         sexp.hs
   ghc-options:     -Wall -fwarn-tabs
 
 executable hsc3-default-param
   build-depends:   base == 4.*,
                    hsc3-db == 0.16.*
-  hs-source-dirs:  hs
+  hs-source-dirs:  cmd
   main-is:         default-param.hs
   ghc-options:     -Wall -fwarn-tabs
 

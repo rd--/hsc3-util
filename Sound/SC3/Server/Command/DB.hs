@@ -1,5 +1,5 @@
-import Data.List
-import Data.Maybe
+import Data.List {- base -}
+import Data.Maybe {- base -}
 import Text.ParserCombinators.Parsec {- parsec -}
 
 data Sig a = Atom a
@@ -45,10 +45,10 @@ p_sig = fmap Seq (many1 (choice [p_atom,p_list]))
 parse_sig :: String -> String -> Either ParseError (Sig Char)
 parse_sig = parse p_sig
 
--- > sig_words (parse_sig_err "i")
--- > sig_words (parse_sig_err "[if]")
--- > sig_words (parse_sig_err "i[f]")
--- > sig_words (parse_sig_err "if[s.]e")
+-- > sig_words show (parse_sig_err "i")
+-- > sig_words show (parse_sig_err "[if]")
+-- > sig_words show (parse_sig_err "i[f]")
+-- > sig_words show (parse_sig_err "if[s.]e")
 parse_sig_err :: String -> Sig Char
 parse_sig_err s =
     case parse_sig "parse_sig_err" s of

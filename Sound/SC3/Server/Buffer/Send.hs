@@ -16,5 +16,5 @@ b_tmp_allocRead nid d = do
       sr = 1
       h = F.Header (length d) F.Float sr nc
       nm = tmp </> show (hash d) <.> "au"
-  F.write nm h [d]
+  F.au_write nm h [d]
   return (b_allocRead nid nm 0 0)
