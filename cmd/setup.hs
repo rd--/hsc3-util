@@ -1,4 +1,5 @@
 import Control.Monad {- base -}
+import Data.List {- base -}
 import System.Directory {- directory -}
 import System.Environment {- base -}
 import System.Exit {- base -}
@@ -38,7 +39,7 @@ pkg_set nm =
       _ -> error "hsc3-setup: unknown pkg_set"
 
 s_echo :: String -> IO ()
-s_echo nm = put_w (pkg_set nm)
+s_echo nm = put_w (sort (pkg_set nm))
 
 s_run :: String -> [String] -> IO ExitCode
 s_run cmd arg = do
@@ -77,6 +78,17 @@ s_with_all nm dir gen =
         (cmd,args) = gen pkg'
     in void (s_run cmd args)
 
+help :: [String]
+help =
+    ["setup {clone|echo|local|rebuild|unregister|update}"
+    ,"  clone name src dst"
+    ,"  echo name"
+    ,"  local name directory command arg..."
+    ,"  unregister name"
+    ,"  update name src dst"
+    ,""
+    ,"    name = core | plain | core+plain | ext | all"]
+
 main :: IO ()
 main = do
   a <- getArgs
@@ -87,4 +99,4 @@ main = do
     ["rebuild",nm,dir] -> s_with_all nm dir (\pkg -> ("cabal","install" : pkg))
     ["unregister",nm] -> s_at_each nm Nothing (\pkg -> ("ghc-pkg",["unregister","--force",pkg]))
     ["update",nm,src,dst] -> s_update nm src dst
-    _ -> putStrLn "hsc3-setup {clone|echo|local|rebuild|unregister|update}"
+    _ -> putStrLn (unlines help)

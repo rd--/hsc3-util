@@ -1,5 +1,5 @@
 clean:
-	(cd hs; make clean)
+	(cd cmd; make clean)
 	cabal clean
 
 push-sp:
