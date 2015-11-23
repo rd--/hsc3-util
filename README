@@ -14,26 +14,26 @@ The following are executables for functions at [hsc3-rw](?t=hsc3-rw):
 
 There is also a set of `scsyndef` _disassemblers_:
 
-- hsc3-scsyndef-[to-dot](?t=hsc3-utils&e=md/scsyndef-to-dot.md) (June, 2014)
-- hsc3-scsyndef-[to-fs](?t=hsc3-utils&e=md/scsyndef-to-fs.md) (October, 2014)
-- hsc3-scsyndef-[to-hs](?t=hsc3-utils&e=md/scsyndef-to-hs.md) (July, 2012)
+- hsc3-scsyndef-[to-dot](?t=hsc3-dot&e=md/scsyndef-to-dot.md) (June, 2014)
+- hsc3-scsyndef-[to-fs](?t=hsc3-db&e=md/scsyndef-to-fs.md) (October, 2014)
+- hsc3-scsyndef-[to-hs](?t=hsc3&e=md/scsyndef-to-hs.md) (July, 2012)
 
 a statistics printer:
 
-- hsc3-scsyndef-[stat](?t=hsc3-utils&e=md/scsyndef-stat.md) (October, 2014)
+- hsc3-scsyndef-[stat](?t=hsc3&e=md/scsyndef-stat.md) (October, 2014)
 
 a UGen default parameter printer:
 
-- hsc3-[default-param](?t=hsc3-utils&e=md/default-param.md) (June, 2015)
+- hsc3-[default-param](?t=hsc3-db&e=md/default-param.md) (June, 2015)
 
 a setup manager:
 
-- hsc3-[setup](?t=hsc3-utils&e=md/setup.md) (May, 2015)
+- hsc3-[setup](?t=hsc3&e=md/setup.md) (May, 2015)
 
 & `scsynth` controls:
 
-- hsc3-scsynth-[reset](?t=hsc3-utils&e=md/scsynth-reset.md) (November, 2015)
-- hsc3-scsynth-[status](?t=hsc3-utils&e=md/scsynth-status.md) (November, 2015)
+- hsc3-scsynth-[reset](?t=hsc3&e=md/scsynth-reset.md) (November, 2015)
+- hsc3-scsynth-[status](?t=hsc3&e=md/scsynth-status.md) (November, 2015)
 
 © [rohan drape][rd], 2013-2015, [gpl][gpl].
 
