@@ -15,17 +15,6 @@ Cabal-Version:     >= 1.8
 
 Data-files:        README
 
-Library
-  Build-Depends:   base == 4.*,
-                   directory,
-                   filepath,
-                   hashable,
-                   hosc == 0.16.*,
-                   hsc3 == 0.16.*,
-                   hsc3-sf == 0.16.*
-  GHC-Options:     -Wall -fwarn-tabs
-  Exposed-modules: Sound.SC3.Server.Buffer.Send
-
 executable hsc3-hash-at
   build-depends:   base == 4.*,
                    hsc3-rw == 0.16.*

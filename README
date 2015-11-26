@@ -32,8 +32,7 @@ a setup manager:
 
 & `scsynth` controls:
 
-- hsc3-scsynth-[reset](?t=hsc3&e=md/scsynth-reset.md) (November, 2015)
-- hsc3-scsynth-[status](?t=hsc3&e=md/scsynth-status.md) (November, 2015)
+- hsc3-[scsynth](?t=hsc3&e=md/scsynth.md) (November, 2015)
 
 © [rohan drape][rd], 2013-2015, [gpl][gpl].
 
