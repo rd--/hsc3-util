@@ -1,40 +1,11 @@
-hsc3-utils - haskell supercollider3 utilities
----------------------------------------------
+hsc3-utils
+----------
 
-[hsc3](?t=hsc3) related utility programs.
-Each gets an `hsc3-` prefix before installation.
+haskell supercollider3 utilities
 
-The following are executables for functions at [hsc3-rw](?t=hsc3-rw):
+relocated, [cli](http://rd.slavepianos.org/?t=hsc3-texts&e=md/cli.md)
 
-- hsc3-[hash-at](?t=hsc3-rw&e=md/hash-at.md) (June, 2014)
-- hsc3-[hash-paren](?t=hsc3-rw&e=md/hash-paren.md) (March, 2013)
-- hsc3-[psynth](?t=hsc3-rw&e=md/psynth.md) (June, 2014)
-- hsc3-[sexp](?t=hsc3-rw&e=md/sexp.md) (October, 2014)
-- hsc3-[uparam](?t=hsc3-rw&e=md/uparam.md) (June, 2014)
-
-There is also a set of `scsyndef` _disassemblers_:
-
-- hsc3-scsyndef-[to-dot](?t=hsc3-dot&e=md/scsyndef-to-dot.md) (June, 2014)
-- hsc3-scsyndef-[to-fs](?t=hsc3-db&e=md/scsyndef-to-fs.md) (October, 2014)
-- hsc3-scsyndef-[to-hs](?t=hsc3&e=md/scsyndef-to-hs.md) (July, 2012)
-
-a statistics printer:
-
-- hsc3-scsyndef-[stat](?t=hsc3&e=md/scsyndef-stat.md) (October, 2014)
-
-a UGen default parameter printer:
-
-- hsc3-[default-param](?t=hsc3-db&e=md/default-param.md) (June, 2015)
-
-a setup manager:
-
-- hsc3-[setup](?t=hsc3&e=md/setup.md) (May, 2015)
-
-& `scsynth` controls:
-
-- hsc3-[scsynth](?t=hsc3&e=md/scsynth.md) (November, 2015)
-
-© [rohan drape][rd], 2013-2015, [gpl][gpl].
+© [rohan drape][rd], 2013-2016, [gpl][gpl].
 
 [rd]: http://rd.slavepianos.org/
 [gpl]: http://gnu.org/copyleft/
