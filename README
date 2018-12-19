@@ -1,11 +1,11 @@
-hsc3-utils
-----------
+hsc3-util
+---------
 
 haskell supercollider3 utilities
 
-relocated, [cli](http://rd.slavepianos.org/?t=hsc3-texts&e=md/cli.md)
+relocated, [cli](http://rohandrape.net/?t=hsc3-texts&e=md/cli.md)
 
-© [rohan drape][rd], 2013-2016, [gpl][gpl].
+© [rohan drape][rd], 2013-2018, [gpl][gpl].
 
-[rd]: http://rd.slavepianos.org/
+[rd]: http://rohandrape.net/
 [gpl]: http://gnu.org/copyleft/
