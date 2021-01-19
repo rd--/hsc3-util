@@ -211,6 +211,9 @@ typedef struct {
     unsigned short scan_rate;
     unsigned char usr_ct_max;
     unsigned short contactsMinForce;
+    float z_divisor;
+    float rx_divisor;
+    float ry_divisor;
 } sensel_usr_opt;
 
 void sensel_usr_opt_default(sensel_usr_opt *opt) {
@@ -224,6 +227,9 @@ void sensel_usr_opt_default(sensel_usr_opt *opt) {
     opt->scan_rate = 125;
     opt->scan_detail = SCAN_DETAIL_MEDIUM;
     opt->contactsMinForce = 24;
+    opt->z_divisor = 2048.0;
+    opt->rx_divisor = 16.0;
+    opt->ry_divisor = 6.0;
 }
 
 void sensel_usr_opt_usage(void) {
@@ -241,12 +247,13 @@ void sensel_usr_opt_usage(void) {
     printf("  -t      set text output mode (default=%s)\n",opt.text_mode ? "true" : "false");
     printf("  -v      set voice assign mode (default=%s)\n",opt.voice_assign ? "true" : "false");
     printf("  -x      set scan detail to high (default=%s)\n",sensel_scan_detail_string[opt.scan_detail]);
+    printf("  -z NUM  set z divisor (default=%.1f)\n",opt.z_divisor);
     exit(0);
 }
 
 int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
     int c;
-    while ((c = getopt(argc, argv, "df:hk:m:n:p:r:tvx")) != -1) {
+    while ((c = getopt(argc, argv, "df:hk:m:n:p:r:tvxz:")) != -1) {
         switch (c) {
         case 'd':
             opt->print_devices = true;
@@ -280,6 +287,9 @@ int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
             break;
         case 'x':
             opt->scan_detail = SCAN_DETAIL_HIGH;
+            break;
+        case 'z':
+            opt->z_divisor = strtof(optarg, NULL);
             break;
         }
     }
@@ -355,11 +365,10 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             float g = (state == CONTACT_START || state == CONTACT_MOVE) ? 1.0 : 0.0;
                             float x = frame->contacts[c].x_pos / sensor_info.width;
                             float y = 1.0 - (frame->contacts[c].y_pos / sensor_info.height);
-                            float z = frame->contacts[c].total_force / 2048.0; /* 4096.0 8192.0 */
-                            //float o = fmodf(frame->contacts[c].orientation + 540.0,360.0) / 360.0;
+                            float z = frame->contacts[c].total_force / opt.z_divisor;
                             float o = frame->contacts[c].orientation / 360.0 + 0.5;
-                            float rx = (frame->contacts[c].major_axis - 10.0) / 16.0;
-                            float ry = (frame->contacts[c].minor_axis - 10.0) / 6.0;
+                            float rx = (frame->contacts[c].major_axis - 10.0) / opt.rx_divisor;
+                            float ry = (frame->contacts[c].minor_axis - 10.0) / opt.ry_divisor;
                             float p = x * 24 + 48;
                             dprintf("/c_setn k=%d 8 g=%f x=%f y=%f z=%f o=%f rx=%f ry=%f\n", k, g, x, y, z, o, rx, ry);
                             int osc_msg_sz = osc_build_message(osc_buf, k, "/c_setn", ",iiffffffff", k, 8, g, x, y, z, o, rx, ry, p);
