@@ -3,9 +3,11 @@ hsc3-util
 
 haskell supercollider3 utilities
 
-relocated, [cli](http://rohandrape.net/?t=hsc3-texts&e=md/cli.md)
+- sensel.[c](?t=hsc3-util&e=cmd/sensel.c)
 
-© [rohan drape][rd], 2013-2018, [gpl][gpl].
+see also: [cli](?t=hsc3-texts&e=md/cli.md)
+
+© [rohan drape][rd], 2013-2021, [gpl][gpl].
 
 [rd]: http://rohandrape.net/
 [gpl]: http://gnu.org/copyleft/
