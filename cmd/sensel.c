@@ -6,14 +6,14 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <sensel.h>
+#include <sensel_device.h>
+
 #include "c-common/bits.h"
 #include "c-common/network.h"
 #include "c-common/observe-signal.h"
 #include "c-common/osc.h"
 #include "c-common/print.h"
-
-#include "sensel.h"
-#include "sensel_device.h"
 
 void sensel_handle_error(SenselStatus err) {
     if(err != SENSEL_OK) {
