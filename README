@@ -5,7 +5,9 @@ haskell supercollider3 utilities
 
 - sensel.[c](?t=hsc3-util&e=cmd/sensel.c)
 
-tested-with: [gcc](http://gcc.gnu.org/) 10.2.0
+tested-with:
+[gcc](http://gcc.gnu.org/) 10.2.0
+[clang](https://clang.llvm.org/)-11.0.1
 
 see also: [cli](?t=hsc3-texts&e=md/cli.md)
 

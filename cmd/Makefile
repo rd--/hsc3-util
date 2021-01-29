@@ -2,12 +2,14 @@ cmd = sensel
 
 include ~/sw/hsc3/mk/cmd.mk
 
+CC = gcc
+
 CPPFLAGS += -Wall -pedantic -O3 -g
 CFLAGS += -D_POSIX_C_SOURCE=200809 -std=c99
 LDLIBS = c-common/lib-c-common.a -ljack -lpthread -lm
 
 sensel: sensel.c
-	gcc $(CPPFLAGS) $(CFLAGS) -o sensel sensel.c $(LDLIBS) -lsensel
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o sensel sensel.c $(LDLIBS) -lsensel
 
 ln-local-c-common:
 	rm -f c-common
@@ -21,4 +23,4 @@ mk-local-c-common:
 # the distinct naming here is for testing on systems that have the standard -lsensel installed.
 # building libsenselnp.so requires editing sensel-api/sensel-lib/Makefile.
 sensel-np: sensel.c
-	gcc $(CPPFLAGS) $(CFLAGS) -o sensel-np sensel.c $(LDLIBS) -lsenselnp
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o sensel-np sensel.c $(LDLIBS) -lsenselnp
