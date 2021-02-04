@@ -3,11 +3,15 @@ hsc3-util
 
 haskell supercollider3 utilities
 
-- sensel.[c](?t=hsc3-util&e=cmd/sensel.c)
+- sensel
+  .[c](?t=hsc3-util&e=cmd/sensel.c)
+  .[md](?t=hsc3-util&e=md/sensel.md)
 
 tested-with:
 [gcc](http://gcc.gnu.org/) 10.2.0
 [clang](https://clang.llvm.org/)-11.0.1
+jackd1-0.125
+jackd2-1.9.17
 
 see also: [cli](?t=hsc3-texts&e=md/cli.md)
 

@@ -205,6 +205,7 @@ typedef struct {
     bool print_devices;
     char hostname[HOST_NAME_MAX];
     uint16_t port;
+    int p_seq; /* number of sequential UDP ports that control data can be sent to */
     bool voice_assign;
     int k0;
     SenselScanDetail scan_detail;
@@ -223,6 +224,7 @@ void sensel_usr_opt_default(sensel_usr_opt *opt) {
     opt->usr_ct_max = 16;
     strncpy(opt->hostname,"localhost",HOST_NAME_MAX - 1);
     opt->port = 57110;
+    opt->p_seq = 1;
     opt->k0 = 13000;
     opt->scan_rate = 125;
     opt->scan_detail = SCAN_DETAIL_MEDIUM;
@@ -244,6 +246,7 @@ void sensel_usr_opt_usage(void) {
     printf("  -n STR  set hostname (default=%s)\n",opt.hostname);
     printf("  -p INT  set port number (default=%hu)\n",opt.port);
     printf("  -r INT  set scan rate (default=%hu)\n",opt.scan_rate);
+    printf("  -s INT  set number of sequential UDP ports voices are distributed across (default=%hu)\n",opt.p_seq);
     printf("  -t      set text output mode (default=%s)\n",opt.text_mode ? "true" : "false");
     printf("  -v      set voice assign mode (default=%s)\n",opt.voice_assign ? "true" : "false");
     printf("  -x      set scan detail to high (default=%s)\n",sensel_scan_detail_string[opt.scan_detail]);
@@ -253,7 +256,7 @@ void sensel_usr_opt_usage(void) {
 
 int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
     int c;
-    while ((c = getopt(argc, argv, "df:hk:m:n:p:r:tvxz:")) != -1) {
+    while ((c = getopt(argc, argv, "df:hk:m:n:p:r:s:tvxz:")) != -1) {
         switch (c) {
         case 'd':
             opt->print_devices = true;
@@ -279,6 +282,9 @@ int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
         case 'r':
             opt->scan_rate = (unsigned short)strtol(optarg, NULL, 0);
             break;
+        case 's':
+            opt->p_seq = (int)strtol(optarg, NULL, 0);
+            break;
         case 't':
             opt->text_mode = true;
             break;
@@ -298,8 +304,10 @@ int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
 
 void sensel_send_osc(const sensel_usr_opt opt) {
     int fd = socket_udp(0);
-    struct sockaddr_in addr;
-    init_sockaddr_in(&addr, opt.hostname, opt.port);
+    struct sockaddr_in addr[opt.p_seq];
+    for (int i = 0; i < opt.p_seq; i++) {
+        init_sockaddr_in(&addr[i], opt.hostname, opt.port + i);
+    }
     const int osc_buf_max = 256;
     uint8_t osc_buf[osc_buf_max];
     SENSEL_HANDLE sensel = NULL;
@@ -360,8 +368,8 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             }
                             int voice_id = ct_voice_id[frame->contacts[c].id];
                             voice_frame_active[voice_id] = frame_counter;
-                            /* k g x y z o rx ry */
-                            int k = opt.k0 + (voice_id * 10);
+                            /* k g x y z o rx ry p */
+                            int k = opt.k0 + ((voice_id / opt.p_seq) * 10);
                             float g = (state == CONTACT_START || state == CONTACT_MOVE) ? 1.0 : 0.0;
                             float x = frame->contacts[c].x_pos / sensor_info.width;
                             float y = 1.0 - (frame->contacts[c].y_pos / sensor_info.height);
@@ -370,9 +378,10 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             float rx = (frame->contacts[c].major_axis - 10.0) / opt.rx_divisor;
                             float ry = (frame->contacts[c].minor_axis - 10.0) / opt.ry_divisor;
                             float p = x * 24 + 48;
-                            dprintf("/c_setn k=%d 8 g=%f x=%f y=%f z=%f o=%f rx=%f ry=%f\n", k, g, x, y, z, o, rx, ry);
+                            dprintf("/c_setn k=%d 8 g=%f x=%f y=%f z=%f o=%f rx=%f ry=%f p=%f\n", k, g, x, y, z, o, rx, ry, p);
                             int osc_msg_sz = osc_build_message(osc_buf, k, "/c_setn", ",iiffffffff", k, 8, g, x, y, z, o, rx, ry, p);
-                            sendto_exactly(fd, osc_buf, osc_msg_sz, addr);
+                            dprintf("voice_id=%d opt.p_seq=%d addr_ix=%d\n", voice_id, opt.p_seq, voice_id % opt.p_seq);
+                            sendto_exactly(fd, osc_buf, osc_msg_sz, addr[voice_id % opt.p_seq]);
                             if (state == CONTACT_START) {
                                 senselSetLEDBrightness(sensel, voice_id, 100);
                             } else if (state == CONTACT_END) {
