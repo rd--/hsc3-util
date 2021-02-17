@@ -1,3 +1,4 @@
+#include <float.h>
 #include <limits.h>
 #include <math.h>
 #include <stdint.h>
@@ -10,13 +11,15 @@
 #include <sensel_device.h>
 
 #include "c-common/bits.h"
+#include "c-common/float.h"
 #include "c-common/network.h"
 #include "c-common/observe-signal.h"
 #include "c-common/osc.h"
+#include "c-common/point.h"
 #include "c-common/print.h"
 
 void sensel_handle_error(SenselStatus err) {
-    if(err != SENSEL_OK) {
+    if (err != SENSEL_OK) {
         printf("sensel_handle_error: NOT SENSEL_OK");
         exit(1);
     }
@@ -63,7 +66,7 @@ void sensel_print_settings(SENSEL_HANDLE sensel) {
     printf(" ContactsMask : u8 = %u\n", contactsMask);
 }
 
-void sensel_print_device_info(SenselDeviceList *device_list, int i) {
+void sensel_print_device_info(const SenselDeviceList *device_list, int i) {
     printf("device_number = %i\n", i);
     printf(" device_list->devices[%i]\n", i);
     printf("  .idx : u8 = %u\n", device_list->devices[i].idx);
@@ -99,11 +102,11 @@ void sensel_print_contacts(void) {
     SenselFrameData *frame = NULL;
     senselAllocateFrameData(sensel, &frame);
     senselStartScanning(sensel);
-    while(observe_end_of_process() == false) {
+    while (observe_end_of_process() == false) {
         sensel_handle_error(senselReadSensor(sensel));
         unsigned int num_frames = 0;
         sensel_handle_error(senselGetNumAvailableFrames(sensel, &num_frames));
-        if(num_frames != 1) {
+        if (num_frames != 1) {
             printf("num_frames : u32 = %u\n", num_frames);
         }
         for (int f = 0; f < num_frames; f++) {
@@ -125,7 +128,7 @@ void sensel_print_contacts(void) {
                         printf(" .y_pos : f32 = %f (mm)\n", frame->contacts[c].y_pos);
                         printf(" .total_force : f32 = %f (gr)\n", frame->contacts[c].total_force);
                         printf(" .area : f32 = %f (#s)\n", frame->contacts[c].area);
-                        if(frame->contacts[c].content_bit_mask & CONTACT_MASK_ELLIPSE) {
+                        if (frame->contacts[c].content_bit_mask & CONTACT_MASK_ELLIPSE) {
                             printf(" .orientation : f32 = %f (°)\n", frame->contacts[c].orientation);
                             printf(" .major_axis : f32 = %f (mm)\n", frame->contacts[c].major_axis);
                             printf(" .minor_axis : f32 = %f (mm)\n", frame->contacts[c].minor_axis);
@@ -156,7 +159,7 @@ void sensel_print_total_force(void) {
     SenselFrameData *frame = NULL;
     senselAllocateFrameData(sensel, &frame);
     senselStartScanning(sensel);
-    while(!observe_end_of_process()) {
+    while (!observe_end_of_process()) {
         senselReadSensor(sensel);
         unsigned int num_frames = 0;
         senselGetNumAvailableFrames(sensel, &num_frames);
@@ -183,7 +186,7 @@ void sensel_print_accel_data(void) {
     SenselFrameData *frame = NULL;
     senselAllocateFrameData(sensel, &frame);
     senselStartScanning(sensel);
-    while(!observe_end_of_process()) {
+    while (!observe_end_of_process()) {
         senselReadSensor(sensel);
         unsigned int num_frames = 0;
         senselGetNumAvailableFrames(sensel, &num_frames);
@@ -215,6 +218,11 @@ typedef struct {
     float z_divisor;
     float rx_divisor;
     float ry_divisor;
+    char *grid_fn;
+    float px_mul;
+    float py_mul;
+    int ix_incr;
+    bool set_led;
 } sensel_usr_opt;
 
 void sensel_usr_opt_default(sensel_usr_opt *opt) {
@@ -232,6 +240,11 @@ void sensel_usr_opt_default(sensel_usr_opt *opt) {
     opt->z_divisor = 2048.0;
     opt->rx_divisor = 16.0;
     opt->ry_divisor = 6.0;
+    opt->grid_fn = NULL;
+    opt->px_mul = 4.0;
+    opt->py_mul = 1.5;
+    opt->ix_incr = 10;
+    opt->set_led = true;
 }
 
 void sensel_usr_opt_usage(void) {
@@ -240,8 +253,11 @@ void sensel_usr_opt_usage(void) {
     printf("hsc3-sensel\n");
     printf("  -d      print device information (default=%s)\n", opt.print_devices ? "true" : "false");
     printf("  -f      set ContactsMinForce (default=%hu valid=[8,16,24...])\n", opt.contactsMinForce);
+    printf("  -g STR  set grid data (csv format) file name (default=nil)\n");
     printf("  -h      print help\n");
+    printf("  -i INT  set index increment for voice data (default=%d)\n",opt.ix_incr);
     printf("  -k INT  set k0 (default=%d)\n",opt.k0);
+    printf("  -l      illuminate leds (default=%s)\n",opt.set_led ? "true" : "false");
     printf("  -m INT  set number of monitored contacts (default=%u)\n",opt.usr_ct_max);
     printf("  -n STR  set hostname (default=%s)\n",opt.hostname);
     printf("  -p INT  set port number (default=%hu)\n",opt.port);
@@ -256,7 +272,7 @@ void sensel_usr_opt_usage(void) {
 
 int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
     int c;
-    while ((c = getopt(argc, argv, "df:hk:m:n:p:r:s:tvxz:")) != -1) {
+    while ((c = getopt(argc, argv, "df:g:hi:k:lm:n:p:r:s:tvxz:")) != -1) {
         switch (c) {
         case 'd':
             opt->print_devices = true;
@@ -267,8 +283,17 @@ int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
         case 'h':
             return -1;
             break;
+        case 'g':
+            opt->grid_fn = strndup(optarg, FILENAME_MAX);
+            break;
+        case 'i':
+            opt->ix_incr = (int)strtol(optarg, NULL, 0);
+            break;
         case 'k':
             opt->k0 = (int)strtol(optarg, NULL, 0);
+            break;
+        case 'l':
+            opt->set_led = false;
             break;
         case 'm':
             opt->usr_ct_max = (int)strtol(optarg, NULL, 0);
@@ -302,6 +327,69 @@ int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
     return 0;
 }
 
+typedef struct {
+    p2 c; /* center of grid element */
+    f32 n; /* fractional midi note number for element */
+} grid_elem_t;
+
+float grid_elem_abs_dist(grid_elem_t e, float x, float y) {
+    return fabsf(p2_distance(e.c,p2_make(x,y)));
+}
+
+int sensel_grid_nearest_ix(const grid_elem_t *g, int k, float x, float y) {
+    float m = FLT_MAX;
+    int e = -1;
+    for (int i = 0; i < k; i++) {
+        float r = grid_elem_abs_dist(g[i], x, y);
+        if (r < m) {
+            e = i;
+            m = r;
+        }
+    }
+    if (e == -1) {
+        fprintf(stderr,"sensel_grid_nearest_ix: e=-1 m=%f\n", m);
+    }
+    return e;
+}
+
+void sensel_grid_resolve(const grid_elem_t *g, int k, float x, float y, float *p, float px_mul, float *px, float py_mul, float *py) {
+    int i = sensel_grid_nearest_ix(g,k,x,y);
+    if (i >= 0) {
+        *p = g[i].n;
+        *px = (x - g[i].c.x) * px_mul;
+        *py = (y - g[i].c.y) * py_mul;
+    }
+}
+
+int sensel_grid_load_csv(char *fn, grid_elem_t *g, int k_max) {
+    int k = 0;
+    FILE *fp = fopen(fn, "r");
+    if(fp) {
+        float x, y, n;
+        while(k < k_max && fscanf(fp, "%f,%f,%f\n", &x, &y, &n) == 3) {
+            g[k].c.x = x;
+            g[k].c.y = y;
+            g[k].n = n;
+            k += 1;
+        }
+        fclose(fp);
+    }
+    return k;
+}
+
+int sensel_grid_default(grid_elem_t *g, float p0, int k) {
+    float x = 0.0;
+    float n = p0;
+    for(int i = 0; i < k; i++) {
+        g[i].c.x = x;
+        g[i].c.y = 0.5;
+        g[i].n = n;
+        x += (1.0 / (float)k);
+        n += 1.0;
+    }
+    return k;
+}
+
 void sensel_send_osc(const sensel_usr_opt opt) {
     int fd = socket_udp(0);
     struct sockaddr_in addr[opt.p_seq];
@@ -310,6 +398,9 @@ void sensel_send_osc(const sensel_usr_opt opt) {
     }
     const int osc_buf_max = 256;
     uint8_t osc_buf[osc_buf_max];
+    const int grid_max = 256;
+    grid_elem_t grid[grid_max];
+    int grid_k = opt.grid_fn ? sensel_grid_load_csv(opt.grid_fn, grid, grid_max) : sensel_grid_default(grid, 48.0, 13);
     SENSEL_HANDLE sensel = NULL;
     senselOpen(&sensel);
     senselSetFrameContent(sensel, FRAME_CONTENT_CONTACTS_MASK);
@@ -334,7 +425,7 @@ void sensel_send_osc(const sensel_usr_opt opt) {
     senselAllocateFrameData(sensel, &frame);
     senselStartScanning(sensel);
     uint64_t frame_counter = 0;
-    while(!observe_end_of_process()) {
+    while (!observe_end_of_process()) {
         sensel_handle_error(senselReadSensor(sensel));
         unsigned int num_frames = 0;
         sensel_handle_error(senselGetNumAvailableFrames(sensel, &num_frames));
@@ -368,23 +459,25 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             }
                             int voice_id = ct_voice_id[frame->contacts[c].id];
                             voice_frame_active[voice_id] = frame_counter;
-                            /* k g x y z o rx ry p */
-                            int k = opt.k0 + ((voice_id / opt.p_seq) * 10);
+                            /* k g x y z o rx ry p px py */
+                            int k = opt.k0 + ((voice_id / opt.p_seq) * opt.ix_incr);
                             float g = (state == CONTACT_START || state == CONTACT_MOVE) ? 1.0 : 0.0;
                             float x = frame->contacts[c].x_pos / sensor_info.width;
                             float y = 1.0 - (frame->contacts[c].y_pos / sensor_info.height);
                             float z = frame->contacts[c].total_force / opt.z_divisor;
                             float o = frame->contacts[c].orientation / 360.0 + 0.5;
-                            float rx = (frame->contacts[c].major_axis - 10.0) / opt.rx_divisor;
-                            float ry = (frame->contacts[c].minor_axis - 10.0) / opt.ry_divisor;
-                            float p = x * 24 + 48;
-                            dprintf("/c_setn k=%d 8 g=%f x=%f y=%f z=%f o=%f rx=%f ry=%f p=%f\n", k, g, x, y, z, o, rx, ry, p);
-                            int osc_msg_sz = osc_build_message(osc_buf, k, "/c_setn", ",iiffffffff", k, 8, g, x, y, z, o, rx, ry, p);
+                            float r_diff = 10.0;
+                            float rx = (frame->contacts[c].major_axis - r_diff) / opt.rx_divisor;
+                            float ry = (frame->contacts[c].minor_axis - r_diff) / opt.ry_divisor;
+                            float p = 48.0, px = 0.0, py = 0.0;
+                            sensel_grid_resolve(grid, grid_k, x, y, &p, opt.px_mul, &px, opt.py_mul, &py);
+                            dprintf("/c_setn k=%d 8 g=%f x=%f y=%f z=%f o=%f rx=%f ry=%f p=%f px=%f py=%f\n", k, g, x, y, z, o, rx, ry, p, px, py);
+                            int osc_msg_sz = osc_build_message(osc_buf, k, "/c_setn", ",iiffffffffff", k, 10, g, x, y, z, o, rx, ry, p, px, py);
                             dprintf("voice_id=%d opt.p_seq=%d addr_ix=%d\n", voice_id, opt.p_seq, voice_id % opt.p_seq);
                             sendto_exactly(fd, osc_buf, osc_msg_sz, addr[voice_id % opt.p_seq]);
-                            if (state == CONTACT_START) {
+                            if (opt.set_led && state == CONTACT_START) {
                                 senselSetLEDBrightness(sensel, voice_id, 100);
-                            } else if (state == CONTACT_END) {
+                            } else if (opt.set_led && state == CONTACT_END) {
                                 senselSetLEDBrightness(sensel, voice_id, 0);
                             }
                         }
@@ -404,7 +497,7 @@ void sensel_send_osc(const sensel_usr_opt opt) {
 int main(int argc, char **argv) {
     sensel_usr_opt opt;
     sensel_usr_opt_default(&opt);
-    if(sensel_usr_opt_parse(&opt,argc,argv) == -1) {
+    if (sensel_usr_opt_parse(&opt,argc,argv) == -1) {
         sensel_usr_opt_usage();
     }
     observe_signals();

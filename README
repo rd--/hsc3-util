@@ -6,6 +6,7 @@ haskell supercollider3 utilities
 - sensel
   .[c](?t=hsc3-util&e=cmd/sensel.c)
   .[md](?t=hsc3-util&e=md/sensel.md)
+  (requires [c-common](?t=c-common))
 
 tested-with:
 [gcc](http://gcc.gnu.org/) 10.2.0

@@ -2,18 +2,23 @@
 
 Command that connects to a Sensel device using the sensel-api and writes contact data to OSC packets.
 
-Packet data is of the form: /c_setn k 8 g x y z o rx ry p where
+Packet data is of the form: /c_setn k 8 g x y z o rx ry p px py where
 `k`=ctl-ix `g`=gate, `x`=x-axis, `y`=y-axis, `z`=z-axiz,
-`o`=orientation, `rx`=x-radius, `ry`=y-radius, `p`=pitch
+`o`=orientation, `rx`=x-radius, `ry`=y-radius,
+`p`=pitch, `px`=p-x-axis-distance `py`=p-y-axis-distance
 
-Voice data is not packed.  Control indices start at k0 (given by `-k`) and increment by 10 places for each voice.  (ie. 13000, 13010, 13020...)
+Voice data is not necessarily packed.  Control indices start at k0
+(given by `-k`) and increment a number of places (given by `-i`) for
+each voice.  (ie. k0, k0+i, k0+i+i...)
 
 ~~~~
 $ hsc3-sensel -h
 hsc3-sensel
   -d      print device information (default=false)
   -f      set ContactsMinForce (default=24 valid=[8,16,24...])
+  -g STR  set grid data (csv format) file name (default=nil)
   -h      print help
+  -i INT  set index increment for voice data (default=10)
   -k INT  set k0 (default=13000)
   -m INT  set number of monitored contacts (default=16)
   -n STR  set hostname (default=localhost)
