@@ -336,6 +336,7 @@ float grid_elem_abs_dist(grid_elem_t e, float x, float y) {
     return fabsf(p2_distance(e.c,p2_make(x,y)));
 }
 
+/* find distance to all grid elem and return minima. this could be optimised if required. */
 int sensel_grid_nearest_ix(const grid_elem_t *g, int k, float x, float y) {
     float m = FLT_MAX;
     int e = -1;
