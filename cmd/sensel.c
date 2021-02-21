@@ -219,8 +219,6 @@ typedef struct {
     float rx_divisor;
     float ry_divisor;
     char *grid_fn;
-    float px_mul;
-    float py_mul;
     int ix_incr;
     bool set_led;
 } sensel_usr_opt;
@@ -241,8 +239,6 @@ void sensel_usr_opt_default(sensel_usr_opt *opt) {
     opt->rx_divisor = 16.0;
     opt->ry_divisor = 6.0;
     opt->grid_fn = NULL;
-    opt->px_mul = 4.0;
-    opt->py_mul = 1.5;
     opt->ix_incr = 10;
     opt->set_led = true;
 }
@@ -353,18 +349,19 @@ int sensel_grid_nearest_ix(const grid_elem_t *g, int k, float x, float y) {
     return e;
 }
 
-void sensel_grid_resolve(const grid_elem_t *g, int k, float x, float y, float *p, float px_mul, float *px, float py_mul, float *py) {
+void sensel_grid_resolve(const grid_elem_t *g, int k, float x, float y, float *p, float px_incr, float *px, float py_incr, float *py) {
     int i = sensel_grid_nearest_ix(g,k,x,y);
     if (i >= 0) {
         *p = g[i].n;
-        *px = (x - g[i].c.x) * px_mul;
-        *py = (y - g[i].c.y) * py_mul;
+        *px = (x - g[i].c.x) / px_incr;
+        *py = (y - g[i].c.y) / py_incr;
     }
 }
 
-int sensel_grid_load_csv(char *fn, grid_elem_t *g, int k_max) {
+int sensel_grid_load_csv(char *fn, int k_max, grid_elem_t *g, float *px_incr, float *py_incr) {
     int k = 0;
     FILE *fp = fopen(fn, "r");
+    fscanf(fp, "%f,%f,%*d\n", py_incr, px_incr);
     if(fp) {
         float x, y, n;
         while(k < k_max && fscanf(fp, "%f,%f,%f\n", &x, &y, &n) == 3) {
@@ -401,7 +398,12 @@ void sensel_send_osc(const sensel_usr_opt opt) {
     uint8_t osc_buf[osc_buf_max];
     const int grid_max = 256;
     grid_elem_t grid[grid_max];
-    int grid_k = opt.grid_fn ? sensel_grid_load_csv(opt.grid_fn, grid, grid_max) : sensel_grid_default(grid, 48.0, 13);
+    float px_incr = 0.5 / 13.0;
+    float py_incr = 0.5;
+    int grid_k =
+        opt.grid_fn ?
+        sensel_grid_load_csv(opt.grid_fn, grid_max, grid, &px_incr, &py_incr) :
+        sensel_grid_default(grid, 48.0, 13);
     SENSEL_HANDLE sensel = NULL;
     senselOpen(&sensel);
     senselSetFrameContent(sensel, FRAME_CONTENT_CONTACTS_MASK);
@@ -471,7 +473,7 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             float rx = (frame->contacts[c].major_axis - r_diff) / opt.rx_divisor;
                             float ry = (frame->contacts[c].minor_axis - r_diff) / opt.ry_divisor;
                             float p = 48.0, px = 0.0, py = 0.0;
-                            sensel_grid_resolve(grid, grid_k, x, y, &p, opt.px_mul, &px, opt.py_mul, &py);
+                            sensel_grid_resolve(grid, grid_k, x, y, &p, px_incr, &px, py_incr, &py);
                             dprintf("/c_setn k=%d 8 g=%f x=%f y=%f z=%f o=%f rx=%f ry=%f p=%f px=%f py=%f\n", k, g, x, y, z, o, rx, ry, p, px, py);
                             int osc_msg_sz = osc_build_message(osc_buf, k, "/c_setn", ",iiffffffffff", k, 10, g, x, y, z, o, rx, ry, p, px, py);
                             dprintf("voice_id=%d opt.p_seq=%d addr_ix=%d\n", voice_id, opt.p_seq, voice_id % opt.p_seq);

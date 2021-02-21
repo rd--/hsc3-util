@@ -1,6 +1,7 @@
 import Text.Printf {- base -}
 
 import qualified Music.Theory.List as List {- hmt -}
+import qualified Music.Theory.Math.Convert as Convert {- hmt -}
 
 import Music.Theory.Tuning.Scala as Scala {- hmt -}
 import Music.Theory.Tuning.Scala.Mode as Mode {- hmt -}
@@ -48,10 +49,11 @@ grid_pitch (x_incr,y_incr) (nr,nc) p0 =
   in map x_seq (y_seq p0)
 
 -- | (x,y,p) CSV table
-grid_csv :: GRID (Double,Double) -> GRID Double -> [String]
-grid_csv grid_c grid_p =
-  let f (x,y) p = printf "%.4f,%.4f,%.4f" x y p
-  in concat (zipWith (zipWith f) grid_c grid_p)
+grid_csv :: (Int,Int) -> GRID (Double,Double) -> GRID Double -> [String]
+grid_csv (nr,nc) grid_c grid_p =
+  let hdr = printf "%.4f,%.4f,%d" (0.5 / Convert.int_to_double nr) (0.5 / Convert.int_to_double nc) (nr * nc)
+      f (x,y) p = printf "%.4f,%.4f,%.4f" x y p
+  in hdr : concat (zipWith (zipWith f) grid_c grid_p)
 
 {-
 
@@ -73,7 +75,7 @@ p = grid_pitch ([2,2,3,2,3],[5]) (4,10+1) 44
 c = grid_coord_unit [0] (4,12+1)
 p = grid_pitch ([1],[5]) (4,12+1) 36
 
-putStrLn $ unlines $ grid_csv c p
+putStrLn $ unlines $ grid_csv (length c,length (c !! 0)) c p
 
 -}
 
@@ -92,7 +94,11 @@ scl_x_axis_proportional scl k m0 =
   in zip x (map (+ m0) m)
 
 x_axis_csv :: [(Double,Double)] -> [String]
-x_axis_csv = let f (x,p) = printf "%.4f,0.5,%.4f" x p in map f
+x_axis_csv e =
+  let nc = length e
+      hdr = printf "0.5,%0.4f,%d" (0.5 / Convert.int_to_double nc) nc
+      f (x,p) = printf "%.4f,0.5,%.4f" x p
+  in hdr : map f e
 
 mode_degree_seq_cycle :: Mode.MODE -> [Int]
 mode_degree_seq_cycle m =
