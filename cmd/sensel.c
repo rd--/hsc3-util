@@ -344,7 +344,7 @@ float grid_elem_abs_dist(grid_elem_t e, float x, float y) {
 }
 
 /* find distance to all grid elem and return minima. this could be optimised if required. */
-int sensel_grid_nearest_ix(const grid_elem_t *g, int k, float x, float y) {
+void sensel_grid_nearest_ix(const grid_elem_t *g, int k, float x, float y, float *p1, float *px, float *p2) {
     float m = FLT_MAX;
     int e = -1;
     for (int i = 0; i < k; i++) {
@@ -357,17 +357,47 @@ int sensel_grid_nearest_ix(const grid_elem_t *g, int k, float x, float y) {
     if (e == -1) {
         fprintf(stderr,"sensel_grid_nearest_ix: e=-1 m=%f\n", m);
     }
-    return e;
+    *p1 = g[e].n;
+    *px = m;
+    *p2 = *p1;
 }
 
-void sensel_grid_resolve(const grid_elem_t *g, int k, float x, float y, float *p, float px_mul, float *px, float py_mul, float *py) {
-    int i = sensel_grid_nearest_ix(g,k,x,y);
-    if (i >= 0) {
-        *p = g[i].n;
-        *px = (x - g[i].c.x) * px_mul;
-        *py = (y - g[i].c.y) * py_mul;
+void sensel_grid_nearest_ix_pair(const grid_elem_t *g, int k, float x, float y, float *p1, float *px, float *p2) {
+    float m1 = FLT_MAX, m2 = FLT_MAX;
+    int i1 = -1, i2 = -1;
+    for (int i = 0; i < k; i++) {
+        float r = grid_elem_abs_dist(g[i], x, y);
+        if (r < m1) {
+            i2 = i1;
+            i1 = i;
+            m2 = m1;
+            m1 = r;
+        } else if (r < m2) {
+            i2 = i;
+            m2 = r;
+        }
+    }
+    if (i1 == -1 || i2 == -1) {
+        fprintf(stderr,"sensel_grid_nearest_ix_pair: i1=%d i2=%d m1=%f m2=%f\n", i1, i2, m1, m2);
+    }
+    *p1 = g[i1].n;
+    *p2 = g[i2].n;
+    float x1 = fabs(x - g[i1].c.x);
+    float x2 = fabs(x - g[i2].c.x);
+    *px = x1 / (x1 + x2);
+    fprintf(stderr,"sensel_grid_nearest_ix_pair: i1=%d i2=%d m1=%f m2=%f x1=%f x2=%f p1=%f px=%f p2=%f \n", i1, i2, m1, m2, x1, x2, *p1, *px, *p2);
+}
+
+/*
+void sensel_grid_resolve(const grid_elem_t *g, int k, float x, float y, float *p1, float *px, float *p2) {
+    int i1 = 0, i2 = 0;
+    sensel_grid_nearest_ix_pair(g,k,x,y,&i1,px,&i2);
+    if (i1 >= 0 && i2 >= 0) {
+        *p1 = g[i1].n;
+        *p2 = g[i2].n;
     }
 }
+*/
 
 int sensel_grid_load_csv(char *fn, int k_max, grid_elem_t *g, int *nr, int *nc) {
     int k = 0, i_n = 0, j_n = 0;
@@ -413,7 +443,7 @@ typedef struct {
     double tm;
     int id;
     float w,x,y,z,o,rx,ry;
-    float p,px,py;
+    float p1,px,p2;
 } event_data_t;
 
 void sense_write_trace(double tm0, const event_data_t ev) {
@@ -441,8 +471,6 @@ void sensel_send_osc(const sensel_usr_opt opt) {
         opt.grid_fn ?
         sensel_grid_load_csv(opt.grid_fn, grid_max, grid, &grid_nr, &grid_nc) :
         sensel_grid_default(grid, 48.0, 13, &grid_nr, &grid_nc);
-    float px_mul = 1.0 * (float)grid_nc;
-    float py_mul = 1.0 * (float)grid_nr;
     SENSEL_HANDLE sensel = NULL;
     senselOpen(&sensel);
     senselSetFrameContent(sensel, FRAME_CONTENT_CONTACTS_MASK);
@@ -514,13 +542,13 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             float r_diff = 10.0;
                             ev.rx = (frame->contacts[c].major_axis - r_diff) / opt.rx_divisor;
                             ev.ry = (frame->contacts[c].minor_axis - r_diff) / opt.ry_divisor;
-                            ev.p = 48.0; ev.px = 0.0; ev.py = 0.0;
-                            sensel_grid_resolve(grid, grid_k, ev.x, ev.y, &(ev.p), px_mul, &(ev.px), py_mul, &(ev.py));
+                            ev.p1 = 48.0; ev.px = 0.0; ev.p2 = 48.0;
+                            sensel_grid_nearest_ix_pair(grid, grid_k, ev.x, ev.y, &(ev.p1), &(ev.px), &(ev.p2));
                             if(opt.write_trace && ev.id == 0) {
                                 sense_write_trace(tm0, ev);
                             }
                             int osc_msg_sz = osc_build_message(osc_buf, k, "/c_setn", ",iiffffffffff", k, 10,
-                                                               ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p, ev.px, ev.py);
+                                                               ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p1, ev.px, ev.p2);
                             dprintf("voice_id=%d opt.p_seq=%d addr_ix=%d\n", ev.id, opt.p_seq, ev.id % opt.p_seq);
                             sendto_exactly(fd, osc_buf, osc_msg_sz, addr[ev.id % opt.p_seq]);
                             if (opt.set_led && state == CONTACT_START) {
