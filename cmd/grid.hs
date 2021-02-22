@@ -1,7 +1,6 @@
 import Text.Printf {- base -}
 
 import qualified Music.Theory.List as List {- hmt -}
-import qualified Music.Theory.Math.Convert as Convert {- hmt -}
 
 import Music.Theory.Tuning.Scala as Scala {- hmt -}
 import Music.Theory.Tuning.Scala.Mode as Mode {- hmt -}
@@ -12,6 +11,13 @@ type XY_RANGE n = (RANGE n,RANGE n)
 
 -- | Row-order grid.  All rows have an equal number of columns.
 type GRID t = [[t]]
+
+-- > grid_indices (2,5)
+grid_indices :: (Int,Int) -> [(Int,Int)]
+grid_indices (nr,nc) = [(r,c) | r <- [0 .. nr - 1], c <- [0 .. nc - 1]]
+
+grid_ix :: GRID t -> (Int,Int) -> t
+grid_ix g (r,c) = (g !! r) !! c
 
 axis_incr :: (Fractional n, Enum n) => RANGE n -> Int -> n
 axis_incr (lhs,rhs) n = (rhs - lhs) / fromIntegral n
@@ -50,10 +56,12 @@ grid_pitch (x_incr,y_incr) (nr,nc) p0 =
 
 -- | (x,y,p) CSV table
 grid_csv :: (Int,Int) -> GRID (Double,Double) -> GRID Double -> [String]
-grid_csv (nr,nc) grid_c grid_p =
-  let hdr = printf "%.4f,%.4f,%d" (0.5 / Convert.int_to_double nr) (0.5 / Convert.int_to_double nc) (nr * nc)
-      f (x,y) p = printf "%.4f,%.4f,%.4f" x y p
-  in hdr : concat (zipWith (zipWith f) grid_c grid_p)
+grid_csv dm grid_c grid_p =
+  let f ix = let (x,y) = grid_ix grid_c ix
+                 p = grid_ix grid_p ix
+                 (r,c) = ix
+             in printf "%d,%d,%.4f,%.4f,%.4f" r c x y p
+  in map f (grid_indices dm)
 
 {-
 
@@ -95,10 +103,8 @@ scl_x_axis_proportional scl k m0 =
 
 x_axis_csv :: [(Double,Double)] -> [String]
 x_axis_csv e =
-  let nc = length e
-      hdr = printf "0.5,%0.4f,%d" (0.5 / Convert.int_to_double nc) nc
-      f (x,p) = printf "%.4f,0.5,%.4f" x p
-  in hdr : map f e
+  let f c (x,p) = printf "0,%d,%.4f,0.5,%.4f" c x p
+  in zipWith f [0::Int ..] e
 
 mode_degree_seq_cycle :: Mode.MODE -> [Int]
 mode_degree_seq_cycle m =
