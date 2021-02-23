@@ -212,6 +212,7 @@ typedef struct {
     int p_seq; /* number of sequential UDP ports that control data can be sent to */
     bool voice_assign;
     int k0;
+    int v0;
     SenselScanDetail scan_detail;
     unsigned short scan_rate;
     unsigned char usr_ct_max;
@@ -255,6 +256,7 @@ void sensel_usr_opt_default(sensel_usr_opt *opt) {
     opt->port = 57110;
     opt->p_seq = 1;
     opt->k0 = 13000;
+    opt->v0 = 0;
     opt->scan_rate = 125;
     opt->scan_detail = SCAN_DETAIL_MEDIUM;
     opt->contactsMinForce = 24;
@@ -280,6 +282,7 @@ void sensel_usr_opt_usage(void) {
     printf("  -l      illuminate leds (default=%s)\n",opt.set_led ? "true" : "false");
     printf("  -m INT  set number of monitored contacts (default=%u)\n",opt.usr_ct_max);
     printf("  -n STR  set hostname (default=%s)\n",opt.hostname);
+    printf("  -o INT  set v0 (default=%d)\n",opt.v0);
     printf("  -p INT  set port number (default=%hu)\n",opt.port);
     printf("  -r INT  set scan rate (default=%hu max=detail:medium:250,detail:low:1000)\n",opt.scan_rate);
     printf("  -s INT  set number of sequential UDP ports voices are distributed across (default=%d)\n",opt.p_seq);
@@ -293,7 +296,7 @@ void sensel_usr_opt_usage(void) {
 
 int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
     int c;
-    while ((c = getopt(argc, argv, "df:g:hi:k:lm:n:p:r:s:tvw:x:z:")) != -1) {
+    while ((c = getopt(argc, argv, "df:g:hi:k:lm:n:o:p:r:s:tvw:x:z:")) != -1) {
         switch (c) {
         case 'd':
             opt->print_devices = true;
@@ -321,6 +324,9 @@ int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
             break;
         case 'n':
             strncpy(opt->hostname,optarg,HOST_NAME_MAX - 1);
+            break;
+        case 'o':
+            opt->v0 = (int)strtol(optarg, NULL, 0);
             break;
         case 'p':
             opt->port = (uint16_t)strtol(optarg, NULL, 0);
@@ -350,6 +356,9 @@ int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
             opt->z_divisor = strtof(optarg, NULL);
             break;
         }
+    }
+    if(opt->v0 + opt->usr_ct_max > 16) {
+        fprintf(stderr,"-v=%d ; -m=%d ; sum must be no more than 16");
     }
     return 0;
 }
@@ -570,7 +579,7 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             ev.id = ct_voice_id[frame->contacts[c].id];
                             voice_frame_active[ev.id] = frame_counter;
                             /* k g x y z o rx ry p px py */
-                            int k = opt.k0 + ((ev.id / opt.p_seq) * opt.ix_incr);
+                            int k = opt.k0 + (((ev.id + opt.v0) / opt.p_seq) * opt.ix_incr);
                             ev.w = (state == CONTACT_START || state == CONTACT_MOVE) ? 1.0 : 0.0;
                             ev.x = frame->contacts[c].x_pos / sensor_info.width;
                             ev.y = 1.0 - (frame->contacts[c].y_pos / sensor_info.height);
