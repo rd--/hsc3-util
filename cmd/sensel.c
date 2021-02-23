@@ -222,7 +222,7 @@ typedef struct {
     char *grid_fn;
     int ix_incr;
     bool set_led;
-    bool write_trace;
+    char *trace_fn;
 } sensel_usr_opt;
 
 void sensel_usr_opt_print(const sensel_usr_opt opt) {
@@ -243,7 +243,7 @@ void sensel_usr_opt_print(const sensel_usr_opt opt) {
     printf("-g str  grid_fn=%s\n",opt.grid_fn);
     printf("-i int  ix_incr=%d\n",opt.ix_incr);
     printf("-l bool set_led=%s\n",opt.set_led ? "true" : "false");
-    printf("-w bool write_trace=%s\n",opt.write_trace ? "true" : "false");
+    printf("-w str  trace_fn=%s\n",opt.trace_fn);
 }
 
 void sensel_usr_opt_default(sensel_usr_opt *opt) {
@@ -264,7 +264,7 @@ void sensel_usr_opt_default(sensel_usr_opt *opt) {
     opt->grid_fn = NULL;
     opt->ix_incr = 10;
     opt->set_led = true;
-    opt->write_trace = false;
+    opt->trace_fn = NULL;
 }
 
 void sensel_usr_opt_usage(void) {
@@ -285,7 +285,7 @@ void sensel_usr_opt_usage(void) {
     printf("  -s INT  set number of sequential UDP ports voices are distributed across (default=%d)\n",opt.p_seq);
     printf("  -t      set text output mode (default=%s)\n",opt.text_mode ? "true" : "false");
     printf("  -v      set voice assign mode (default=%s)\n",opt.voice_assign ? "true" : "false");
-    printf("  -w      write trace text (default=%s)\n",opt.write_trace ? "true" : "false");
+    printf("  -w STR  write trace text to output file (default=nil)\n");
     printf("  -x INT  set scan detail (default=%s) 0=high 1=medium 2=low\n",sensel_scan_detail_string[opt.scan_detail]);
     printf("  -z NUM  set z divisor (default=%.1f)\n",opt.z_divisor);
     exit(0);
@@ -293,7 +293,7 @@ void sensel_usr_opt_usage(void) {
 
 int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
     int c;
-    while ((c = getopt(argc, argv, "df:g:hi:k:lm:n:p:r:s:tvwx:z:")) != -1) {
+    while ((c = getopt(argc, argv, "df:g:hi:k:lm:n:p:r:s:tvw:x:z:")) != -1) {
         switch (c) {
         case 'd':
             opt->print_devices = true;
@@ -338,7 +338,7 @@ int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
             opt->voice_assign = true;
             break;
         case 'w':
-            opt->write_trace = true;
+            opt->trace_fn = strndup(optarg, FILENAME_MAX);
             break;
         case 'x':
             opt->scan_detail = (int)strtol(optarg, NULL, 0);
@@ -470,19 +470,21 @@ typedef struct {
     float p,px;
 } event_data_t;
 
-void sense_write_trace(double tm0, const event_data_t ev) {
+void sense_write_trace(FILE *fp, double tm0, const event_data_t ev) {
     bool csv = true;
     if(csv) {
-        printf("%.4f,%d,%.1f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n",
-               (ev.tm - tm0), ev.id, ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry);
+        fprintf(fp,
+                "%.4f,%d,%.1f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n",
+                (ev.tm - tm0), ev.id, ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p, ev.px);
     } else {
-        printf("t=%.4f v=%02d w=%.1f x=%.4f y=%.4f z=%.4f o=%.4f rx=%.4f ry=%.4f p=%.4f px=%.4f\n",
-               (ev.tm - tm0), ev.id, ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p, ev.px);
+        fprintf(fp,
+                "t=%.4f v=%02d w=%.1f x=%.4f y=%.4f z=%.4f o=%.4f rx=%.4f ry=%.4f p=%.4f px=%.4f\n",
+                (ev.tm - tm0), ev.id, ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p, ev.px);
     }
 }
 
 void sensel_send_osc(const sensel_usr_opt opt) {
-    int fd = socket_udp(0);
+    int osc_fd = socket_udp(0);
     struct sockaddr_in addr[opt.p_seq];
     for (int i = 0; i < opt.p_seq; i++) {
         init_sockaddr_in(&addr[i], opt.hostname, opt.port + i);
@@ -497,6 +499,10 @@ void sensel_send_osc(const sensel_usr_opt opt) {
         opt.grid_fn ?
         sensel_grid_load_csv(opt.grid_fn, grid_max, grid, &grid_nr, &grid_nc) :
         sensel_grid_default(grid, 48.0, 13, &grid_nr, &grid_nc);
+    FILE *trace_fp = NULL;
+    if(opt.trace_fn) {
+        trace_fp = fopen(opt.trace_fn,"w");
+    }
     SENSEL_HANDLE sensel = NULL;
     senselOpen(&sensel);
     senselSetFrameContent(sensel, FRAME_CONTENT_CONTACTS_MASK);
@@ -576,13 +582,13 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             ev.p = 48.0;
                             ev.px = 0.0;
                             sensel_grid_nearest_ix_pair(grid, grid_k, ev.x, ev.y, &(ev.p), &(ev.px));
-                            if(opt.write_trace && ev.id == 0) {
-                                sense_write_trace(tm0, ev);
+                            if(trace_fp) {
+                                sense_write_trace(trace_fp, tm0, ev);
                             }
                             int osc_msg_sz = osc_build_message(osc_buf, k, "/c_setn", ",iifffffffff", k, 9,
                                                                ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p, ev.px);
                             dprintf("voice_id=%d opt.p_seq=%d addr_ix=%d\n", ev.id, opt.p_seq, ev.id % opt.p_seq);
-                            sendto_exactly(fd, osc_buf, osc_msg_sz, addr[ev.id % opt.p_seq]);
+                            sendto_exactly(osc_fd, osc_buf, osc_msg_sz, addr[ev.id % opt.p_seq]);
                             if (opt.set_led && state == CONTACT_START) {
                                 senselSetLEDBrightness(sensel, ev.id, 100);
                             } else if (opt.set_led && state == CONTACT_END) {
@@ -598,7 +604,10 @@ void sensel_send_osc(const sensel_usr_opt opt) {
     senselStopScanning(sensel);
     senselFreeFrameData(sensel,frame);
     senselClose(sensel);
-    close(fd);
+    close(osc_fd);
+    if(trace_fp) {
+        fclose(trace_fp);
+    }
 }
 
 int main(int argc, char **argv) {
