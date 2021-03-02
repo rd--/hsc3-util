@@ -3,7 +3,7 @@ hsc3-util
 
 haskell supercollider3 utilities
 
-- sensel
+- sensel-ll
   .[c](?t=hsc3-util&e=cmd/sensel-ll.c)
   .[md](?t=hsc3-util&e=md/sensel-ll.md)
   (requires [c-common](?t=c-common))
