@@ -4,8 +4,8 @@ hsc3-util
 haskell supercollider3 utilities
 
 - sensel
-  .[c](?t=hsc3-util&e=cmd/sensel.c)
-  .[md](?t=hsc3-util&e=md/sensel.md)
+  .[c](?t=hsc3-util&e=cmd/sensel-ll.c)
+  .[md](?t=hsc3-util&e=md/sensel-ll.md)
   (requires [c-common](?t=c-common))
 
 tested-with:

@@ -1,4 +1,4 @@
-# hsc3-sensel
+# hsc3-sensel-ll
 
 Command that connects to a Sensel device using the sensel-api and writes contact data to OSC packets.
 
@@ -12,7 +12,7 @@ Voice data is not necessarily packed.  Control indices start at k0
 each voice.  (ie. k0, k0+i, k0+i+i...)
 
 ~~~~
-$ hsc3-sensel -h
+$ hsc3-sensel-ll -h
 hsc3-sensel
   -d      print device information (default=false)
   -f      set ContactsMinForce (default=24 valid=[8,16,24...])
