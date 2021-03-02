@@ -19,9 +19,12 @@ grid_indices (nr,nc) = [(r,c) | r <- [0 .. nr - 1], c <- [0 .. nc - 1]]
 grid_ix :: GRID t -> (Int,Int) -> t
 grid_ix g (r,c) = (g !! r) !! c
 
+-- | Increment for axis, for axis-aligned grid.
 axis_incr :: (Fractional n, Enum n) => RANGE n -> Int -> n
 axis_incr (lhs,rhs) n = (rhs - lhs) / fromIntegral n
 
+-- | Locations along axis, for axis-aligned grid.
+--
 -- > map (axis_loc (0,100)) [1,2,5,10,16]
 axis_loc :: (Fractional n, Enum n) => RANGE n -> Int -> [n]
 axis_loc (lhs,rhs) n =
@@ -54,7 +57,7 @@ grid_pitch (x_incr,y_incr) (nr,nc) p0 =
       y_seq y = take nr (List.dx_d y (cycle y_incr))
   in map x_seq (y_seq p0)
 
--- | (x,y,p) CSV table
+-- | (i,j,x,y,p) CSV table
 grid_csv :: (Int,Int) -> GRID (Double,Double) -> GRID Double -> [String]
 grid_csv dm grid_c grid_p =
   let f ix = let (x,y) = grid_ix grid_c ix

@@ -358,7 +358,7 @@ int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
         }
     }
     if(opt->v0 + opt->usr_ct_max > 16) {
-        fprintf(stderr,"-v=%d ; -m=%d ; sum must be no more than 16");
+        fprintf(stderr,"-v=%d ; -m=%d ; sum must be no more than 16", opt->v0, opt->usr_ct_max);
     }
     return 0;
 }
@@ -432,6 +432,7 @@ void sensel_grid_resolve(const grid_elem_t *g, int k, float x, float y, float *p
 }
 */
 
+/* read csv data, allow trailing data at each line */
 int sensel_grid_load_csv(char *fn, int k_max, grid_elem_t *g, int *nr, int *nc) {
     int k = 0, i_n = 0, j_n = 0;
     FILE *fp = fopen(fn, "r");
@@ -440,16 +441,21 @@ int sensel_grid_load_csv(char *fn, int k_max, grid_elem_t *g, int *nr, int *nc) 
     if(fp) {
         int i, j;
         float x, y, n;
-        while(k < k_max && fscanf(fp, "%d,%d,%f,%f,%f\n", &i, &j, &x, &y, &n) == 5) {
-            g[k].i = i;
-            g[k].j = j;
-            g[k].c.x = x;
-            g[k].c.y = y;
-            g[k].n = n;
-            k += 1;
-            i_n = i > i_n ? i : i_n;
-            j_n = j > j_n ? j : j_n;
+        char *ln = NULL;
+        size_t sz = 0;
+        while (k < k_max && getline(&ln, &sz, fp) != -1) {
+            if(fscanf(fp, "%d,%d,%f,%f,%f", &i, &j, &x, &y, &n) == 5) {
+                g[k].i = i;
+                g[k].j = j;
+                g[k].c.x = x;
+                g[k].c.y = y;
+                g[k].n = n;
+                k += 1;
+                i_n = i > i_n ? i : i_n;
+                j_n = j > j_n ? j : j_n;
+            }
         }
+        free(ln);
         fclose(fp);
     }
     *nr = i_n + 1;
