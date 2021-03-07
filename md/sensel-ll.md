@@ -14,6 +14,7 @@ each voice.  (ie. k0, k0+i, k0+i+i...)
 ~~~~
 $ hsc3-sensel-ll -h
 hsc3-sensel
+  -a CHAR aspect ratio (default=i)
   -d      print device information (default=false)
   -f      set ContactsMinForce (default=24 valid=[8,16,24...])
   -g STR  set grid data (csv format) file name (default=nil)
@@ -46,3 +47,9 @@ the composite patch will have 16 voices.
 
 (Note, this requires using jackd2, which supports multiple processors,
 and not jackd1, which does not.)
+
+The `-a` option sets the aspect ratio, ie. the scaling for each axis.
+The sensor is wider (230mm) than it is tall (130mm).
+`i` (the default) scales each axis indendently to be in (0,1).
+`x` scales each axis by the sensor width, x is in (0,1) y is in (0,0.57)
+`y` scales each axis by the sensor height, y is in (0,1) x is in (0,1.78)

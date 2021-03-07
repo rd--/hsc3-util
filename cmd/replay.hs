@@ -7,6 +7,7 @@ import Sound.OSC {- hosc -}
 import Sound.SC3 {- hsc3 -}
 import Sound.SC3.Common.Base {- hsc3 -}
 
+-- | (time,voice,event)
 type REventTrace = (Double,Int,REvent Double)
 
 -- | Load CSV trace file
@@ -38,10 +39,15 @@ rEventTrace_is_end (_,_,(w,_,_,_,_,_,_,_,_,_)) = not (w > 0)
 -- | Re-assign k in trace using a strict lowest voice number not used algorithm.
 rEventTrace_reassign :: [REventTrace] -> [REventTrace]
 rEventTrace_reassign tr =
-  -- rw tracks which k are being written using a [(k,k')] set
-  let rw_get_k rw i = fmap snd (find ((== i) . fst) rw) -- lookup where k is re-writing to, nothing if k is onset
-      rw_next_k rw = head (filter (\i -> i `notElem` (map snd rw)) [0..16]) -- find lowest k not being written to
-      rw_delete_k rw i = filter (not . (== i) . fst) rw -- delete k at w=0 event
+  {-
+  rw :: [(Int,Int)] ; store which k are being written using a [(k,k')] set
+  rw_get_k ; lookup where k is re-writing to, or nothing if k is an onset (ie. not in rw)
+  rw_next_k ; find lowest k not being written to
+  rw_delete_k ; delete k at w=0 event
+  -}
+  let rw_get_k rw i = fmap snd (find ((== i) . fst) rw)
+      rw_next_k rw = head (filter (\i -> i `notElem` (map snd rw)) [0..16])
+      rw_delete_k rw i = filter (not . (== i) . fst) rw
       f rw (tm,k,e) =
         let (w,_,_,_,_,_,_,_,_,_) = e
         in case rw_get_k rw k of

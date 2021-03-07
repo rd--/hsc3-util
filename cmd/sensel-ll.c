@@ -224,27 +224,29 @@ typedef struct {
     int ix_incr;
     bool set_led;
     char *trace_fn;
+    char aspect;
 } sensel_usr_opt;
 
 void sensel_usr_opt_print(const sensel_usr_opt opt) {
-    printf("-t bool text_mode=%s\n", opt.text_mode ? "true" : "false");
+    printf("-a char aspect=%c\n", opt.aspect);
     printf("-d bool print_devices=%s\n", opt.print_devices ? "true" : "false");
-    printf("-h str  hostname=%s\n", opt.hostname);
-    printf("-p int  port=%hu\n", opt.port);
-    printf("-s int  p_seq=%d\n",opt.p_seq);
-    printf("-v bool voice_assign=%s\n",opt.voice_assign ? "true" : "false");
-    printf("-k int  k0=%d\n",opt.k0);
-    printf("-x int  scan_detail=%d=%s\n",opt.scan_detail,sensel_scan_detail_string[opt.scan_detail]);
-    printf("-r int  scan_rate=%hu\n",opt.scan_rate);
-    printf("-m int  ct_max=%u\n",opt.usr_ct_max);
     printf("-f int  contactsMinForce=%hu\n", opt.contactsMinForce);
+    printf("-g str  grid_fn=%s\n",opt.grid_fn);
+    printf("-h str  hostname=%s\n", opt.hostname);
+    printf("-i int  ix_incr=%d\n",opt.ix_incr);
+    printf("-k int  k0=%d\n",opt.k0);
+    printf("-l bool set_led=%s\n",opt.set_led ? "true" : "false");
+    printf("-m int  ct_max=%u\n",opt.usr_ct_max);
+    printf("-p int  port=%hu\n", opt.port);
+    printf("-r int  scan_rate=%hu\n",opt.scan_rate);
+    printf("-s int  p_seq=%d\n",opt.p_seq);
+    printf("-t bool text_mode=%s\n", opt.text_mode ? "true" : "false");
+    printf("-v bool voice_assign=%s\n",opt.voice_assign ? "true" : "false");
+    printf("-w str  trace_fn=%s\n",opt.trace_fn);
+    printf("-x int  scan_detail=%d=%s\n",opt.scan_detail,sensel_scan_detail_string[opt.scan_detail]);
     printf("-z num  z_divisor=%.1f\n",opt.z_divisor);
     printf("   num  rx_divisor=%.1f\n",opt.rx_divisor);
     printf("   num  ry_divisor=%.1f\n",opt.ry_divisor);
-    printf("-g str  grid_fn=%s\n",opt.grid_fn);
-    printf("-i int  ix_incr=%d\n",opt.ix_incr);
-    printf("-l bool set_led=%s\n",opt.set_led ? "true" : "false");
-    printf("-w str  trace_fn=%s\n",opt.trace_fn);
 }
 
 void sensel_usr_opt_default(sensel_usr_opt *opt) {
@@ -267,12 +269,14 @@ void sensel_usr_opt_default(sensel_usr_opt *opt) {
     opt->ix_incr = 10;
     opt->set_led = true;
     opt->trace_fn = NULL;
+    opt->aspect = 'i';
 }
 
 void sensel_usr_opt_usage(void) {
     sensel_usr_opt opt;
     sensel_usr_opt_default(&opt);
     printf("hsc3-sensel\n");
+    printf("  -a CHAR aspect ratio (default=%c valid=[i,x,y])\n", opt.aspect);
     printf("  -d      print device information (default=%s)\n", opt.print_devices ? "true" : "false");
     printf("  -f      set ContactsMinForce (default=%hu valid=[8,16,24...])\n", opt.contactsMinForce);
     printf("  -g STR  set grid data (csv format) file name (default=nil)\n");
@@ -296,8 +300,14 @@ void sensel_usr_opt_usage(void) {
 
 int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
     int c;
-    while ((c = getopt(argc, argv, "df:g:hi:k:lm:n:o:p:r:s:tvw:x:z:")) != -1) {
+    while ((c = getopt(argc, argv, "a:df:g:hi:k:lm:n:o:p:r:s:tvw:x:z:")) != -1) {
         switch (c) {
+        case 'a':
+            opt->aspect = optarg[0];
+            if(opt->aspect != 'i' && opt->aspect != 'x' && opt->aspect != 'y') {
+                sensel_usr_opt_usage();
+            }
+            break;
         case 'd':
             opt->print_devices = true;
             break;
@@ -526,6 +536,8 @@ void sensel_send_osc(const sensel_usr_opt opt) {
     senselSetContactsMinForce(sensel, opt.contactsMinForce);
     SenselSensorInfo sensor_info;
     senselGetSensorInfo(sensel, &sensor_info);
+    float x_mul = opt.aspect == 'y' ? 1.0 / sensor_info.height : 1.0 / sensor_info.width;
+    float y_mul = opt.aspect == 'x' ? 1.0 / sensor_info.width : 1.0 / sensor_info.height;
     int ct_voice_id[sensor_info.max_contacts]; /* array mapping contact.id -> voice-id | -1 */
     uint64_t voice_frame_active[sensor_info.max_contacts]; /* array storing most recent active frames counter for each contact */
     dprintf("usr_ct_max : u8 = %u\n", opt.usr_ct_max);
@@ -587,8 +599,8 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             /* k g x y z o rx ry p px py */
                             int k = opt.k0 + (((ev.id + opt.v0) / opt.p_seq) * opt.ix_incr);
                             ev.w = (state == CONTACT_START || state == CONTACT_MOVE) ? 1.0 : 0.0;
-                            ev.x = frame->contacts[c].x_pos / sensor_info.width;
-                            ev.y = 1.0 - (frame->contacts[c].y_pos / sensor_info.height);
+                            ev.x = frame->contacts[c].x_pos * x_mul;
+                            ev.y = (sensor_info.height - frame->contacts[c].y_pos) * y_mul;
                             ev.z = frame->contacts[c].total_force / opt.z_divisor;
                             ev.o = frame->contacts[c].orientation / 360.0 + 0.5;
                             float r_diff = 10.0;
