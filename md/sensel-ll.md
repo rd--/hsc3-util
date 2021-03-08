@@ -53,3 +53,16 @@ The sensor is wider (230mm) than it is tall (130mm).
 `i` (the default) scales each axis indendently to be in (0,1).
 `x` scales each axis by the sensor width, x is in (0,1) y is in (0,0.57)
 `y` scales each axis by the sensor height, y is in (0,1) x is in (0,1.78)
+
+The `-g` option reads grid data from a CSV file. The fixed fields are:
+
+- row index
+- column index
+- x coordinate
+- y coordinate
+- pitch (fractional midi note number)
+- cell width
+- cell height
+- cell polygon degree (4=rectangle, 6=hexagon)
+
+Following are (x,y) co-ordinates for the cell polygon.

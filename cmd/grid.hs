@@ -1,25 +1,32 @@
 import Text.Printf {- base -}
 
+import Data.CG.Minus.Plain {- hcg-minus -}
+
 import qualified Music.Theory.List as List {- hmt -}
+import qualified Music.Theory.Tuning.Scala as Scala {- hmt -}
+import qualified Music.Theory.Tuning.Scala.Mode as Mode {- hmt -}
 
-import Music.Theory.Tuning.Scala as Scala {- hmt -}
-import Music.Theory.Tuning.Scala.Mode as Mode {- hmt -}
+type RANGE n = V2 n
 
-type RANGE n = (n,n)
-
-type XY_RANGE n = (RANGE n,RANGE n)
+type XY_RANGE n = V2 (RANGE n)
 
 -- | Row-order grid.  All rows have an equal number of columns.
 type GRID t = [[t]]
 
--- > grid_indices (2,5)
-grid_indices :: (Int,Int) -> [(Int,Int)]
+grid_map :: (t -> u) -> GRID t -> GRID u
+grid_map f = map (map f)
+
+-- | Row-order sequence of all grid indices.
+--
+-- > grid_indices (2,3) == [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2)]
+grid_indices :: V2 Int -> [V2 Int]
 grid_indices (nr,nc) = [(r,c) | r <- [0 .. nr - 1], c <- [0 .. nc - 1]]
 
-grid_ix :: GRID t -> (Int,Int) -> t
+-- | Lookup element at grid.
+grid_ix :: GRID t -> V2 Int -> t
 grid_ix g (r,c) = (g !! r) !! c
 
--- | Increment for axis, for axis-aligned grid.
+-- | Increment for axis, for axis-aligned grid of /n/ places (ie. cell diameter)
 axis_incr :: (Fractional n, Enum n) => RANGE n -> Int -> n
 axis_incr (lhs,rhs) n = (rhs - lhs) / fromIntegral n
 
@@ -40,56 +47,60 @@ I.e. xos=[0,0.5] is a hexagonal grid.  xos=[0] is a square grid.
 
 > grid_coord ((0,100),(0,100)) [0,0.5] (4,10)
 -}
-grid_coord :: (Fractional n, Enum n) => XY_RANGE n -> [n] -> (Int,Int) -> GRID (n,n)
+grid_coord :: (Fractional n, Enum n) => XY_RANGE n -> [n] -> V2 Int -> GRID (V2 n)
 grid_coord (x_rng,y_rng) xos (nr,nc) =
   let x_incr = axis_incr x_rng nc
       x_loc = axis_loc x_rng nc
       y_loc = axis_loc y_rng nr
   in map (\(y,xo) -> map (\x -> (x + xo,y)) x_loc) (zip y_loc (map (* x_incr) (cycle xos)))
 
-grid_coord_unit :: (Fractional n, Enum n) => [n] -> (Int,Int) -> GRID (n,n)
+grid_coord_unit :: (Fractional n, Enum n) => [n] -> V2 Int -> GRID (V2 n)
 grid_coord_unit = grid_coord ((0,1),(0,1))
 
 -- > grid_pitch ([1],[4]) (4,13) 60
-grid_pitch :: (Num n,Enum n) => ([n],[n]) -> (Int,Int) -> n -> GRID n
+grid_pitch :: (Num n,Enum n) => V2 [n] -> V2 Int -> n -> GRID n
 grid_pitch (x_incr,y_incr) (nr,nc) p0 =
   let x_seq x = take nc (List.dx_d x (cycle x_incr))
       y_seq y = take nr (List.dx_d y (cycle y_incr))
   in map x_seq (y_seq p0)
 
--- | (i,j,x,y,p) CSV table
-grid_csv :: (Int,Int) -> GRID (Double,Double) -> GRID Double -> [String]
-grid_csv dm grid_c grid_p =
+-- | (i,j,x,y,p,w,h) CSV table
+grid_csv :: V2 Int -> V2 Double -> GRID (V2 Double) -> GRID Double -> GRID [V2 Double] -> [String]
+grid_csv dm (w,h) grid_c grid_p grid_r =
   let f ix = let (x,y) = grid_ix grid_c ix
                  p = grid_ix grid_p ix
-                 (r,c) = ix
-             in printf "%d,%d,%.4f,%.4f,%.4f" r c x y p
+                 [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] = grid_ix grid_r ix
+                 (i,j) = ix
+             in printf "%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f,4,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f" i j x y p w h x1 y1 x2 y2 x3 y3 x4 y4
   in map f (grid_indices dm)
+
+grid_diameter :: V2 Int -> V2 Double
+grid_diameter (nr,nc) = (0.5 / fromIntegral nc,0.5 / fromIntegral nr)
+
+grid_rect :: V2 Double -> V2 Double -> [V2 Double]
+grid_rect (w,h) (x,y) =
+  let dx = w
+      dy = h
+  in [(x - dx,y - dy),(x + dx,y - dy),(x + dx,y + dy),(x - dx,y + dy)]
+
+gen_grid_csv :: [Double] -> V2 Int -> V2 [Double] -> Double -> [String]
+gen_grid_csv xos dm incr p0 =
+  let c = grid_coord_unit xos dm
+      p = grid_pitch incr dm p0
+      r = grid_map (grid_rect (grid_diameter dm)) c
+  in grid_csv dm (grid_diameter dm) c p r
 
 {-
 
-c = grid_coord_unit [0] (1,5+1)
-p = grid_pitch ([2,2,3,2,3],[]) (1,5+1) 48
+mk xos dm incr = putStrLn . unlines . gen_grid_csv xos dm incr
 
-c = grid_coord_unit [0] (1,10+1)
-p = grid_pitch ([2,2,3,2,3],[]) (1,10+1) 48
-
-c = grid_coord_unit [0] (2,10+1)
-p = grid_pitch ([2,2,3,2,3],[5]) (2,10+1) 43
-
-c = grid_coord_unit [0] (3,10+1)
-p = grid_pitch ([2,2,3,2,3],[5]) (3,10+1) 39
-
-c = grid_coord_unit [0] (4,10+1)
-p = grid_pitch ([2,2,3,2,3],[5]) (4,10+1) 44
-
-c = grid_coord_unit [0,0.5] (4,10+1)
-p = grid_pitch ([2,2,3,2,3],[5]) (4,10+1) 44
-
-c = grid_coord_unit [0] (4,12+1)
-p = grid_pitch ([1],[5]) (4,12+1) 36
-
-putStrLn $ unlines $ grid_csv (length c,length (c !! 0)) c p
+mk [0] (1,5+1) ([2,2,3,2,3],[]) 48
+mk [0] (1,10+1) ([2,2,3,2,3],[]) 48
+mk [0] (2,10+1) ([2,2,3,2,3],[5]) 43
+mk [0] (3,10+1) ([2,2,3,2,3],[5]) 39
+mk [0] (4,10+1) ([2,2,3,2,3],[5]) 44
+mk [0,0.5] (4,10+1) ([2,2,3,2,3],[5]) 44
+mk [0] (4,12+1) ([1],[5]) 36
 
 -}
 
@@ -107,9 +118,9 @@ scl_x_axis_proportional scl k m0 =
       x = map (/ l) m
   in zip x (map (+ m0) m)
 
-x_axis_csv :: [(Double,Double)] -> [String]
+x_axis_csv :: [(Double,Double,Double)] -> [String]
 x_axis_csv e =
-  let f c (x,p) = printf "0,%d,%.4f,0.5,%.4f" c x p
+  let f c (x,p,w) = printf "0,%d,%.4f,0.5,%.4f,%.4f,1.0" c x p w
   in zipWith f [0::Int ..] e
 
 mode_degree_seq_cycle :: Mode.MODE -> [Int]

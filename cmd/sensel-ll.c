@@ -377,14 +377,16 @@ typedef struct {
     int i, j; /* row and column indices */
     p2 c; /* center of grid element */
     f32 n; /* fractional midi note number for element */
+    f32 w, h; /* width & height of cell */
 } grid_elem_t;
 
+/* distance from e.c to (x,y) */
 float grid_elem_abs_dist(grid_elem_t e, float x, float y) {
     return fabsf(p2_distance(e.c,p2_make(x,y)));
 }
 
 /* find nearest of all grid elem and set p to linear pitch (fmidi) of this. px is actual distance. */
-void sensel_grid_nearest_ix(const grid_elem_t *g, int k, float x, float y, float *p, float *px) {
+void sensel_grid_nearest_ix(const grid_elem_t *g, int k, float x, float y, float *p, float *px, float *py) {
     float m = FLT_MAX;
     int e = -1;
     for (int i = 0; i < k; i++) {
@@ -398,7 +400,9 @@ void sensel_grid_nearest_ix(const grid_elem_t *g, int k, float x, float y, float
         fprintf(stderr,"sensel_grid_nearest_ix: e=-1 m=%f\n", m);
     }
     *p = g[e].n;
-    *px = m;
+    *px = (x - g[e].c.x) / g[e].w;
+    *py = (y - g[e].c.y) / g[e].h;
+    dprintf("sensel_grid_nearest_ix: e=%d m=%f p=%f px=%f py=%f\n", e, m, *p, *px, *py);
 }
 
 /* find two nearest grid elem, set p to linear pitch (fmidi) of nearest and px to distance to interpolated pitch (along x-axis) */
@@ -449,20 +453,28 @@ int sensel_grid_load_csv(char *fn, int k_max, grid_elem_t *g, int *nr, int *nc) 
     *nr = 0;
     *nc = 0;
     if(fp) {
-        int i, j;
-        float x, y, n;
+        int i, j, np;
+        float x, y, n, w, h;
         char *ln = NULL;
         size_t sz = 0;
         while (k < k_max && getline(&ln, &sz, fp) != -1) {
-            if(fscanf(fp, "%d,%d,%f,%f,%f", &i, &j, &x, &y, &n) == 5) {
-                g[k].i = i;
-                g[k].j = j;
-                g[k].c.x = x;
-                g[k].c.y = y;
-                g[k].n = n;
-                k += 1;
-                i_n = i > i_n ? i : i_n;
-                j_n = j > j_n ? j : j_n;
+            dprintf("sz=%zu, ln=%s\n", sz, ln);
+            if(sz > 0) {
+                int r = sscanf(ln, "%d,%d,%f,%f,%f,%f,%f,%d", &i, &j, &x, &y, &n, &w, &h, &np);
+                if(r == 8) {
+                    g[k].i = i;
+                    g[k].j = j;
+                    g[k].c.x = x;
+                    g[k].c.y = y;
+                    g[k].n = n;
+                    g[k].w = w;
+                    g[k].h = h;
+                    k += 1;
+                    i_n = i > i_n ? i : i_n;
+                    j_n = j > j_n ? j : j_n;
+                } else {
+                    fprintf(stderr,"sensel_grid_load_csv: error: k=%d, r=%d, sz=%zu, np=%d; %s\n", k, r, sz, np, ln);
+                }
             }
         }
         free(ln);
@@ -470,6 +482,7 @@ int sensel_grid_load_csv(char *fn, int k_max, grid_elem_t *g, int *nr, int *nc) 
     }
     *nr = i_n + 1;
     *nc = j_n + 1;
+    dprintf("sensel_grid_load_csv: k_max=%d, k=%d, nr=%d, nc=%d\n", k_max, k, *nr, *nc);
     return k;
 }
 
@@ -492,19 +505,19 @@ typedef struct {
     double tm;
     int id;
     float w,x,y,z,o,rx,ry;
-    float p,px;
+    float p,px,py;
 } event_data_t;
 
 void sense_write_trace(FILE *fp, double tm0, const event_data_t ev) {
     bool csv = true;
     if(csv) {
         fprintf(fp,
-                "%.4f,%d,%.1f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n",
-                (ev.tm - tm0), ev.id, ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p, ev.px);
+                "%.4f,%d,%.1f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n",
+                (ev.tm - tm0), ev.id, ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p, ev.px, ev.py);
     } else {
         fprintf(fp,
-                "t=%.4f v=%02d w=%.1f x=%.4f y=%.4f z=%.4f o=%.4f rx=%.4f ry=%.4f p=%.4f px=%.4f\n",
-                (ev.tm - tm0), ev.id, ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p, ev.px);
+                "t=%.4f v=%02d w=%.1f x=%.4f y=%.4f z=%.4f o=%.4f rx=%.4f ry=%.4f p=%.4f px=%.4f py=%.4f\n",
+                (ev.tm - tm0), ev.id, ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p, ev.px, ev.py);
     }
 }
 
@@ -608,12 +621,13 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             ev.ry = (frame->contacts[c].minor_axis - r_diff) / opt.ry_divisor;
                             ev.p = 48.0;
                             ev.px = 0.0;
-                            sensel_grid_nearest_ix_pair(grid, grid_k, ev.x, ev.y, &(ev.p), &(ev.px));
+                            ev.py = 0.0;
+                            sensel_grid_nearest_ix(grid, grid_k, ev.x, ev.y, &(ev.p), &(ev.px), &(ev.py));
                             if(trace_fp) {
                                 sense_write_trace(trace_fp, tm0, ev);
                             }
-                            int osc_msg_sz = osc_build_message(osc_buf, k, "/c_setn", ",iifffffffff", k, 9,
-                                                               ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p, ev.px);
+                            int osc_msg_sz = osc_build_message(osc_buf, k, "/c_setn", ",iiffffffffff", k, 10,
+                                                               ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p, ev.px, ev.py);
                             dprintf("voice_id=%d opt.p_seq=%d addr_ix=%d\n", ev.id, opt.p_seq, ev.id % opt.p_seq);
                             sendto_exactly(osc_fd, osc_buf, osc_msg_sz, addr[ev.id % opt.p_seq]);
                             if (opt.set_led && state == CONTACT_START) {
