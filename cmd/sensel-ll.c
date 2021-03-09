@@ -400,9 +400,10 @@ void sensel_grid_nearest_ix(const grid_elem_t *g, int k, float x, float y, float
         fprintf(stderr,"sensel_grid_nearest_ix: e=-1 m=%f\n", m);
     }
     *p = g[e].n;
-    *px = (x - g[e].c.x) / g[e].w;
-    *py = (y - g[e].c.y) / g[e].h;
-    dprintf("sensel_grid_nearest_ix: e=%d m=%f p=%f px=%f py=%f\n", e, m, *p, *px, *py);
+    *px = (x - g[e].c.x) * (2.0 /  g[e].w); // -1,1
+    *py = (y - g[e].c.y) * (2.0 /  g[e].h); // -1,1
+    dprintf("sensel_grid_nearest_ix: e=%02d m=%.2f x=%.2f c.x=%.2f y=%.2f c.y=%.2f w=%.2f h=%.2f p=%.2f px=%.2f py=%.2f\n",
+            e, m, x, g[e].c.x, y, g[e].c.y, g[e].w, g[e].h, *p, *px, *py);
 }
 
 /* find two nearest grid elem, set p to linear pitch (fmidi) of nearest and px to distance to interpolated pitch (along x-axis) */
@@ -488,12 +489,15 @@ int sensel_grid_load_csv(char *fn, int k_max, grid_elem_t *g, int *nr, int *nc) 
 
 int sensel_grid_default(grid_elem_t *g, float p0, int k, int *nr, int *nc) {
     float x = 0.0;
+    float x_incr = 1.0 / (float)k;
     float n = p0;
     for(int i = 0; i < k; i++) {
         g[i].c.x = x;
         g[i].c.y = 0.5;
         g[i].n = n;
-        x += (1.0 / (float)k);
+        g[i].w = x_incr;
+        g[i].h = 1.0;
+        x += x_incr;
         n += 1.0;
     }
     *nr = 1;
