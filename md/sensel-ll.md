@@ -56,13 +56,14 @@ The sensor is wider (230mm) than it is tall (130mm).
 
 The `-g` option reads grid data from a CSV file. The fixed fields are:
 
-- row index
-- column index
-- x coordinate
-- y coordinate
-- pitch (fractional midi note number)
-- cell width
-- cell height
-- cell polygon degree (4=rectangle, 6=hexagon)
+1. row index
+2. column index
+3. x coordinate
+4. y coordinate
+5. pitch (fractional midi note number)
+6. cell width
+7. cell height
+8. cell text (written in quotation marks, maximum fifteen characters)
+9. cell polygon degree (4=rectangle, 6=hexagon)
 
 Following are (x,y) co-ordinates for the cell polygon.

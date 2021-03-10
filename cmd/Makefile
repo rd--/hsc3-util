@@ -2,7 +2,7 @@ cmd = sensel-ll
 
 include ~/sw/hsc3/mk/cmd.mk
 
-CC = gcc
+CC = gcc # gcc ; clang
 
 CPPFLAGS += -Wall -pedantic -O3 -g
 CFLAGS += -D_POSIX_C_SOURCE=200809 -std=c99

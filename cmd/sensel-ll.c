@@ -454,15 +454,16 @@ int sensel_grid_load_csv(char *fn, int k_max, grid_elem_t *g, int *nr, int *nc) 
     *nr = 0;
     *nc = 0;
     if(fp) {
-        int i, j, np;
-        float x, y, n, w, h;
         char *ln = NULL;
         size_t sz = 0;
         while (k < k_max && getline(&ln, &sz, fp) != -1) {
             dprintf("sz=%zu, ln=%s\n", sz, ln);
             if(sz > 0) {
-                int r = sscanf(ln, "%d,%d,%f,%f,%f,%f,%f,%d", &i, &j, &x, &y, &n, &w, &h, &np);
-                if(r == 8) {
+                int i, j, np;
+                float x, y, n, w, h;
+                char txt[16];
+                int r = sscanf(ln, "%d,%d,%f,%f,%f,%f,%f,%15[^,],%d", &i, &j, &x, &y, &n, &w, &h, txt, &np);
+                if(r == 9) {
                     g[k].i = i;
                     g[k].j = j;
                     g[k].c.x = x;
