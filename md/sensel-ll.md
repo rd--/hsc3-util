@@ -50,7 +50,7 @@ and not jackd1, which does not.)
 
 The `-a` option sets the aspect ratio, ie. the scaling for each axis.
 The sensor is wider (230mm) than it is tall (130mm).
-`i` (the default) scales each axis indendently to be in (0,1).
+`i` (the default) scales each axis independently to be in (0,1).
 `x` scales each axis by the sensor width, x is in (0,1) y is in (0,0.57)
 `y` scales each axis by the sensor height, y is in (0,1) x is in (0,1.78)
 
