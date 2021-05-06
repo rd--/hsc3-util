@@ -6,17 +6,17 @@ CC = gcc # gcc ; clang
 
 CPPFLAGS += -Wall -pedantic -O3 -g
 CFLAGS += -D_POSIX_C_SOURCE=200809 -std=c99
-LDLIBS = c-common/lib-c-common.a -ljack -lpthread -lm
+LDLIBS = c-commonr/lib-c-commonr.a -ljack -lpthread -lm
 
 sensel-ll: sensel-ll.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o sensel-ll sensel-ll.c $(LDLIBS) -lsensel
 
-ln-local-c-common:
-	rm -f c-common
-	ln -s $(HOME)/sw/c-common c-common
+ln-local-c-commonr:
+	rm -f c-commonr
+	ln -s $(HOME)/sw/c-commonr c-commonr
 
-mk-local-c-common:
-	(cd c-common ; make)
+mk-local-c-commonr:
+	(cd c-commonr ; make)
 
 # sensel-ll-np is linked against the sensel-api library built without the non-free pressure library.
 # this library can be compiled on arm64, where sensel don't provide a pre-built library.

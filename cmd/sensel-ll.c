@@ -10,14 +10,14 @@
 #include <sensel.h>
 #include <sensel_device.h>
 
-#include "c-common/bits.h"
-#include "c-common/float.h"
-#include "c-common/network.h"
-#include "c-common/observe-signal.h"
-#include "c-common/osc.h"
-#include "c-common/point.h"
-#include "c-common/print.h"
-#include "c-common/time-current.h"
+#include "c-commonr/bits.h"
+#include "c-commonr/float.h"
+#include "c-commonr/network.h"
+#include "c-commonr/observe-signal.h"
+#include "c-commonr/osc.h"
+#include "c-commonr/point.h"
+#include "c-commonr/print.h"
+#include "c-commonr/time-current.h"
 
 void sensel_handle_error(SenselStatus err) {
     if (err != SENSEL_OK) {
