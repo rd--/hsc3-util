@@ -1,4 +1,4 @@
-cmd = sensel-ll
+cmd = scsynth sensel-ll
 
 include ~/sw/hsc3/mk/cmd.mk
 
