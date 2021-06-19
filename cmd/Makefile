@@ -11,11 +11,7 @@ LDLIBS = r-common/c/lib-r-common.a -ljack -lpthread -lm
 sensel-ll: sensel-ll.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o sensel-ll sensel-ll.c $(LDLIBS) -lsensel
 
-ln-local-r-common:
-	rm -f r-common
-	ln -s $(HOME)/sw/r-common r-common
-
-mk-local-r-common:
+mk-r-common:
 	(cd r-common/c ; make)
 
 # np is the sensel-api library built without the non-free pressure library (np = no-pressure)
@@ -35,3 +31,4 @@ sensel-ll-np: sensel-ll.c
 
 clean-all:
 	rm -f sensel-ll sensel-ll-np-static sensel-ll-np
+	(cd r-common/c ; make clean)
