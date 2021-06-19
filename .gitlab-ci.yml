@@ -1,0 +1,15 @@
+image: haskell:8
+
+stages:
+  - build
+
+build:
+  stage: build
+  script:
+    - cabal update
+    - cabal install --installdir public --install-method copy
+  rules:
+    - when: manual
+  artifacts:
+    paths:
+      - public/hsc3-scsynth

@@ -5,6 +5,7 @@ all:
 	(cd cmd ; make all)
 
 clean:
+	rm -fR dist dist-newstyle
 	(cd cmd ; make clean)
 
 install:

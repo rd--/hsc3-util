@@ -7,6 +7,7 @@ haskell supercollider3 utilities
   .[c](?t=hsc3-util&e=cmd/sensel-ll.c)
   .[md](?t=hsc3-util&e=md/sensel-ll.md)
   (requires [c-common](?t=c-common))
+- [scsynth](http://rohandrape.net/?t=hsc3-util&e=md/scsynth.md)
 
 tested-with:
 [gcc](http://gcc.gnu.org/) 10.2.0
