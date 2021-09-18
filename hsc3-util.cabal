@@ -15,7 +15,7 @@ build-type:        Simple
 
 data-files:        README.md
 
-executable hcs3-scsynth
+executable hsc3-scsynth
   build-depends:    base == 4.* && < 5,
                     containers,
                     filepath,
