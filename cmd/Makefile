@@ -1,6 +1,6 @@
 cmd = scsynth sensel-ll
 
-include ~/sw/hsc3/mk/cmd.mk
+include ~/sw/hsc3-meta/mk/cmd.mk
 
 CC = gcc # gcc ; clang
 
@@ -12,6 +12,7 @@ sensel-ll: sensel-ll.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o sensel-ll sensel-ll.c $(LDLIBS) -lsensel
 
 mk-r-common:
+	git submodule update
 	(cd r-common/c ; make)
 
 # np is the sensel-api library built without the non-free pressure library (np = no-pressure)
