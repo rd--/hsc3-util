@@ -11,6 +11,7 @@ import Sound.SC3 {- hsc3 -}
 import qualified Sound.SC3.Server.Graphdef as Graphdef {- hsc3 -}
 import qualified Sound.SC3.Server.Graphdef.Read as Read {- hsc3 -}
 import qualified Sound.SC3.Server.Graphdef.Text as Graphdef {- hsc3 -}
+import qualified Sound.SC3.Server.Nrt.Stat as Nrt {- hsc3 -}
 import qualified Sound.SC3.UGen.Graph.Reconstruct as Reconstruct {- hsc3 -}
 
 import qualified Sound.File.NeXT as SF {- hsc3-sf -}
@@ -210,7 +211,7 @@ main = do
     ["status","print"] -> withSC3 serverStatus >>= mapM_ putStrLn
     ["status","monitor",dly] -> withSC3 (forever (status_monitor (read dly)))
     ["message","print",addr] -> message_print addr
-    ["nrt","audition",fn] -> readNRT fn >>= nrt_audition
-    ["nrt","stat",fn] -> readNRT fn >>= print . nrt_stat
+    ["nrt","audition",fn] -> readNrt fn >>= nrt_audition
+    ["nrt","stat",fn] -> readNrt fn >>= print . Nrt.nrt_stat
     ["wait-for"] -> wait_for
     _ -> putStrLn (unlines help)
