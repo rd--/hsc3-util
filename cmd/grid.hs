@@ -8,14 +8,15 @@ import qualified Music.Theory.Pitch.Spelling.Table as Pitch {- hmt -}
 import qualified Music.Theory.Tuning.Scala as Scala {- hmt -}
 import qualified Music.Theory.Tuning.Scala.Mode as Mode {- hmt -}
 
-type RANGE n = V2 n
+type Range n = V2 n
 
-type XY_RANGE n = V2 (RANGE n)
+type Xy_Range n = V2 (Range n)
 
 -- | Row-order grid.  All rows have an equal number of columns.
-type GRID t = [[t]]
+type Grid t = [[t]]
 
-grid_map :: (t -> u) -> GRID t -> GRID u
+-- | map of map
+grid_map :: (t -> u) -> Grid t -> Grid u
 grid_map f = map (map f)
 
 -- | Row-order sequence of all grid indices.
@@ -25,20 +26,20 @@ grid_indices :: V2 Int -> [V2 Int]
 grid_indices (nr,nc) = [(r,c) | r <- [0 .. nr - 1], c <- [0 .. nc - 1]]
 
 -- | Lookup element at grid.
-grid_ix :: GRID t -> V2 Int -> t
+grid_ix :: Grid t -> V2 Int -> t
 grid_ix g (r,c) = (g !! r) !! c
 
 -- | Increment for axis, for axis-aligned grid of /n/ places (ie. cell diameter)
 --
 -- > axis_incr (0,1) 10 == 0.1
-axis_incr :: (Fractional n, Enum n) => RANGE n -> Int -> n
+axis_incr :: (Fractional n, Enum n) => Range n -> Int -> n
 axis_incr (lhs,rhs) n = (rhs - lhs) / fromIntegral n
 
 {- | Locations along axis, for axis-aligned grid.
 
 > map (axis_loc (0,100)) [1,2,5,10] == [[50],[25,75],[10,30,50,70,90],[5,15,25,35,45,55,65,75,85,95]]
 -}
-axis_loc :: (Fractional n, Enum n) => RANGE n -> Int -> [n]
+axis_loc :: (Fractional n, Enum n) => Range n -> Int -> [n]
 axis_loc (lhs,rhs) n =
   let u = axis_incr (lhs,rhs) n
       i = u / 2.0
@@ -52,25 +53,31 @@ I.e. xos=[0,0.5] is a hexagonal grid.  xos=[0] is a square grid.
 
 > grid_coord ((0,100),(0,100)) [0,0.5] (4,10)
 -}
-grid_coord :: (Fractional n, Enum n) => XY_RANGE n -> [n] -> V2 Int -> GRID (V2 n)
+grid_coord :: (Fractional n, Enum n) => Xy_Range n -> [n] -> V2 Int -> Grid (V2 n)
 grid_coord (x_rng,y_rng) xos (nr,nc) =
   let x_incr = axis_incr x_rng nc
       x_loc = axis_loc x_rng nc
       y_loc = axis_loc y_rng nr
   in map (\(y,xo) -> map (\x -> (x + xo,y)) x_loc) (zip y_loc (map (* x_incr) (cycle xos)))
 
-grid_coord_unit :: (Fractional n, Enum n) => [n] -> V2 Int -> GRID (V2 n)
+grid_coord_unit :: (Fractional n, Enum n) => [n] -> V2 Int -> Grid (V2 n)
 grid_coord_unit = grid_coord ((0,1),(0,1))
 
--- > grid_pitch ([1],[4]) (4,13) 60
-grid_pitch :: (Num n,Enum n) => V2 [n] -> V2 Int -> n -> GRID n
-grid_pitch (x_incr,y_incr) (nr,nc) p0 =
+{- | Given x and y axis increments (in midi note numbers) and an initial midi note number, generate pitch grid.
+
+> grid_midi_pitch ([1],[4]) (4,13) 60
+-}
+grid_midi_pitch :: (Num n,Enum n) => V2 [n] -> V2 Int -> n -> Grid n
+grid_midi_pitch (x_incr,y_incr) (nr,nc) p0 =
   let x_seq x = take nc (List.dx_d x (cycle x_incr))
       y_seq y = take nr (List.dx_d y (cycle y_incr))
   in map x_seq (y_seq p0)
 
--- | (i,j,x,y,p,w,h,txt,4,c...) CSV table
-grid_csv :: V2 Int -> V2 Double -> GRID (V2 Double) -> GRID Double -> GRID [V2 Double] -> [String]
+{- | (i,j,x,y,p,w,h,txt,4,c...) CSV table
+
+p is a unit value (in 0-1), not a midi note number.  The txt field gives the ISO note name for p.
+-}
+grid_csv :: V2 Int -> V2 Double -> Grid (V2 Double) -> Grid Double -> Grid [V2 Double] -> [String]
 grid_csv dm (w,h) grid_c grid_p grid_r =
   let f ix = let (x,y) = grid_ix grid_c ix
                  p = grid_ix grid_p ix
@@ -78,8 +85,8 @@ grid_csv dm (w,h) grid_c grid_p grid_r =
                  (i,j) = ix
                  txt = Pitch.pitch_pp_iso (Pitch.midi_to_pitch_sharp (round p))
              in printf
-                "%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f,\"%s\",4,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f"
-                i j x y p w h txt x1 y1 x2 y2 x3 y3 x4 y4
+                "%d,%d,%.4f,%.4f,%.6f,%.4f,%.4f,\"%s\",4,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f"
+                i j x y (p / 127.0) w h txt x1 y1 x2 y2 x3 y3 x4 y4
   in map f (grid_indices dm)
 
 -- > grid_cell_dimensions (2,10)
@@ -95,7 +102,7 @@ grid_rect (w,h) (x,y) =
 gen_grid_csv :: [Double] -> V2 Int -> V2 [Double] -> Double -> [String]
 gen_grid_csv xos dm incr p0 =
   let c = grid_coord_unit xos dm
-      p = grid_pitch incr dm p0
+      p = grid_midi_pitch incr dm p0
       r = grid_map (grid_rect (grid_cell_dimensions dm)) c
   in grid_csv dm (grid_cell_dimensions dm) c p r
 

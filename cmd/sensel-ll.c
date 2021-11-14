@@ -385,7 +385,7 @@ float grid_elem_abs_dist(grid_elem_t e, float x, float y) {
     return fabsf(p2_distance(e.c,p2_make(x,y)));
 }
 
-/* find nearest of all grid elem and set p to linear pitch (fmidi) of this. px is actual distance. */
+/* find nearest of all grid elem and set p to linear pitch (0-1 scaled fmidi) of this. px is actual distance. */
 void sensel_grid_nearest_ix(const grid_elem_t *g, int k, float x, float y, float *p, float *px, float *py) {
     float m = FLT_MAX;
     int e = -1;
@@ -406,7 +406,7 @@ void sensel_grid_nearest_ix(const grid_elem_t *g, int k, float x, float y, float
             e, m, x, g[e].c.x, y, g[e].c.y, g[e].w, g[e].h, *p, *px, *py);
 }
 
-/* find two nearest grid elem, set p to linear pitch (fmidi) of nearest and px to distance to interpolated pitch (along x-axis) */
+/* find two nearest grid elem, set p to linear pitch (0-1 scaled fmidi) of nearest and px to distance to interpolated pitch (along x-axis) */
 void sensel_grid_nearest_ix_pair(const grid_elem_t *g, int k, float x, float y, float *p, float *px) {
     float m1 = FLT_MAX, m2 = FLT_MAX;
     int i1 = -1, i2 = -1;
@@ -499,7 +499,7 @@ int sensel_grid_default(grid_elem_t *g, float p0, int k, int *nr, int *nc) {
         g[i].w = x_incr;
         g[i].h = 1.0;
         x += x_incr;
-        n += 1.0;
+        n += 1.0 / 127.0;
     }
     *nr = 1;
     *nc = k;
@@ -541,7 +541,7 @@ void sensel_send_osc(const sensel_usr_opt opt) {
     int grid_k =
         opt.grid_fn ?
         sensel_grid_load_csv(opt.grid_fn, grid_max, grid, &grid_nr, &grid_nc) :
-        sensel_grid_default(grid, 48.0, 13, &grid_nr, &grid_nc);
+        sensel_grid_default(grid, 48.0 / 127.0, 13, &grid_nr, &grid_nc);
     FILE *trace_fp = NULL;
     if(opt.trace_fn) {
         trace_fp = fopen(opt.trace_fn,"w");
@@ -624,7 +624,7 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             float r_diff = 10.0;
                             ev.rx = (frame->contacts[c].major_axis - r_diff) / opt.rx_divisor;
                             ev.ry = (frame->contacts[c].minor_axis - r_diff) / opt.ry_divisor;
-                            ev.p = 48.0;
+                            ev.p = 48.0 / 127.0;
                             ev.px = 0.0;
                             ev.py = 0.0;
                             sensel_grid_nearest_ix(grid, grid_k, ev.x, ev.y, &(ev.p), &(ev.px), &(ev.py));
