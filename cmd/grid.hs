@@ -139,7 +139,7 @@ x_axis_csv e =
   let f c (x,p,w) = printf "0,%d,%.4f,0.5,%.4f,%.4f,1.0,\"%.4f\",0" c x p w p
   in zipWith f [0::Int ..] e
 
-mode_degree_seq_cycle :: Mode.MODE -> [Int]
+mode_degree_seq_cycle :: Mode.Mode -> [Int]
 mode_degree_seq_cycle m =
   let l = Mode.mode_length m
       d = Mode.mode_degree_seq m
@@ -147,7 +147,7 @@ mode_degree_seq_cycle m =
       z = take l d
   in concat (map (\i -> map (+ i) z) [0,u ..])
 
-mode_degree_select :: Mode.MODE -> [t] -> [t]
+mode_degree_select :: Mode.Mode -> [t] -> [t]
 mode_degree_select m x =
   let k = length x
       dgr = takeWhile (< k) (mode_degree_seq_cycle m)
