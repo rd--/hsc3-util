@@ -13,7 +13,7 @@ each voice.  (ie. k0, k0+i, k0+i+i...)
 
 ~~~~
 $ hsc3-sensel-ll -h
-hsc3-sensel
+hsc3-sensel-ll
   -a CHAR aspect ratio (default=i)
   -d      print device information (default=false)
   -f      set ContactsMinForce (default=24 valid=[8,16,24...])
@@ -27,7 +27,7 @@ hsc3-sensel
   -r INT  set scan rate (default=125)
   -s INT  set number of sequential UDP ports voices are distributed across (default=1)
   -t      set text output mode (default=false)
-  -v      set voice assign mode (default=false)
+  -v      set voice assign mode (default=true)
   -x      set scan detail to high (default=medium)
   -z NUM  set z divisor (default=2048.0)
 $

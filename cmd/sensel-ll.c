@@ -252,7 +252,7 @@ void sensel_usr_opt_print(const sensel_usr_opt opt) {
 void sensel_usr_opt_default(sensel_usr_opt *opt) {
     opt->print_devices = false;
     opt->text_mode = false;
-    opt->voice_assign = false;
+    opt->voice_assign = true;
     opt->usr_ct_max = 16;
     strncpy(opt->hostname,"localhost",HOST_NAME_MAX - 1);
     opt->port = 57110;
@@ -351,7 +351,7 @@ int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
             opt->text_mode = true;
             break;
         case 'v':
-            opt->voice_assign = true;
+            opt->voice_assign = false;
             break;
         case 'w':
             opt->trace_fn = strndup(optarg, FILENAME_MAX);

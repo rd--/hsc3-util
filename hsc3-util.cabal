@@ -5,7 +5,7 @@ synopsis:          Haskell SuperCollider Utilities
 description:       Haskell SuperCollider Utilities
 license:           GPL-3.0-only
 category:          Sound
-copyright:         (c) Rohan Drape and others, 2005-2021
+copyright:         (c) Rohan Drape and others, 2005-2022
 author:            Rohan Drape
 maintainer:        rd@rohandrape.net
 stability:         Experimental

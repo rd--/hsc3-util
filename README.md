@@ -17,7 +17,7 @@ jackd2-1.9.17
 
 see also: [cli](?t=hsc3-texts&e=md/cli.md)
 
-© [rohan drape][rd], 2013-2021, [gpl][gpl].
+© [rohan drape][rd], 2013-2022, [gpl][gpl].
 
 [rd]: http://rohandrape.net/
 [gpl]: http://gnu.org/copyleft/
