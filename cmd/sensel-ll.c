@@ -614,7 +614,7 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             }
                             ev.id = ct_voice_id[frame->contacts[c].id];
                             voice_frame_active[ev.id] = frame_counter;
-                            /* k g x y z o rx ry p px py */
+                            /* k w x y z o rx ry p px py */
                             int k = opt.k0 + (((ev.id + opt.v0) / opt.p_seq) * opt.ix_incr);
                             ev.w = (state == CONTACT_START || state == CONTACT_MOVE) ? 1.0 : 0.0;
                             ev.x = frame->contacts[c].x_pos * x_mul;
@@ -635,6 +635,7 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                                                                ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p, ev.px, ev.py);
                             dprintf("voice_id=%d opt.p_seq=%d addr_ix=%d\n", ev.id, opt.p_seq, ev.id % opt.p_seq);
                             sendto_exactly(osc_fd, osc_buf, osc_msg_sz, addr[ev.id % opt.p_seq]);
+                            /* set LED status */
                             if (opt.set_led && state == CONTACT_START) {
                                 senselSetLEDBrightness(sensel, ev.id, 100);
                             } else if (opt.set_led && state == CONTACT_END) {
