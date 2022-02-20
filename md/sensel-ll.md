@@ -2,7 +2,7 @@
 
 Command that connects to a Sensel device using the sensel-api and writes contact data to OSC packets.
 
-Packet data is of the form: /c_setn k 10 g x y z o rx ry p px py where
+Packet data is of the form: _/c_setn k 10 g x y z o rx ry p px py_ where
 `k`=ctl-ix `g`=gate, `x`=x-axis, `y`=y-axis, `z`=z-axiz,
 `o`=orientation, `rx`=x-radius, `ry`=y-radius,
 `p`=pitch, `px`=p-x-axis-distance `py`=p-y-axis-distance
@@ -53,6 +53,9 @@ The sensor is wider (230mm) than it is tall (130mm).
 `i` (the default) scales each axis independently to be in (0,1).
 `x` scales each axis by the sensor width, x is in (0,1) y is in (0,0.57)
 `y` scales each axis by the sensor height, y is in (0,1) x is in (0,1.78)
+
+The `-e` option latches the _z_ field, that is it remains set at the level recorded at the start of the contact.
+This makes testing programs intended for keyboard input, with an envelope generator, simpler.
 
 The `-g` option reads grid data from a CSV file. The fixed fields are:
 

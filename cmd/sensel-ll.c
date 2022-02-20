@@ -225,6 +225,7 @@ typedef struct {
     bool set_led;
     char *trace_fn;
     char aspect;
+    bool latch_z;
 } sensel_usr_opt;
 
 void sensel_usr_opt_print(const sensel_usr_opt opt) {
@@ -270,6 +271,7 @@ void sensel_usr_opt_default(sensel_usr_opt *opt) {
     opt->set_led = true;
     opt->trace_fn = NULL;
     opt->aspect = 'i';
+    opt->latch_z = false;
 }
 
 void sensel_usr_opt_usage(void) {
@@ -278,6 +280,7 @@ void sensel_usr_opt_usage(void) {
     printf("hsc3-sensel\n");
     printf("  -a CHAR aspect ratio (default=%c valid=[i,x,y])\n", opt.aspect);
     printf("  -d      print device information (default=%s)\n", opt.print_devices ? "true" : "false");
+    printf("  -e      latch z, ie. initial z value is retained (default=%s)\n", opt.latch_z ? "true" : "false");
     printf("  -f      set ContactsMinForce (default=%hu valid=[8,16,24...])\n", opt.contactsMinForce);
     printf("  -g STR  set grid data (csv format) file name (default=nil)\n");
     printf("  -h      print help\n");
@@ -300,7 +303,7 @@ void sensel_usr_opt_usage(void) {
 
 int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
     int c;
-    while ((c = getopt(argc, argv, "a:df:g:hi:k:lm:n:o:p:r:s:tvw:x:z:")) != -1) {
+    while ((c = getopt(argc, argv, "a:def:g:hi:k:lm:n:o:p:r:s:tvw:x:z:")) != -1) {
         switch (c) {
         case 'a':
             opt->aspect = optarg[0];
@@ -310,6 +313,9 @@ int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
             break;
         case 'd':
             opt->print_devices = true;
+            break;
+        case 'e':
+            opt->latch_z = true;
             break;
         case 'f':
             opt->contactsMinForce = (unsigned short)strtol(optarg, NULL, 0);
@@ -619,7 +625,9 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             ev.w = (state == CONTACT_START || state == CONTACT_MOVE) ? 1.0 : 0.0;
                             ev.x = frame->contacts[c].x_pos * x_mul;
                             ev.y = (sensor_info.height - frame->contacts[c].y_pos) * y_mul;
-                            ev.z = frame->contacts[c].total_force / opt.z_divisor;
+                            if(!opt.latch_z || state == CONTACT_START) {
+                                ev.z = frame->contacts[c].total_force / opt.z_divisor;
+                            }
                             ev.o = frame->contacts[c].orientation / 360.0 + 0.5;
                             float r_diff = 10.0;
                             ev.rx = (frame->contacts[c].major_axis - r_diff) / opt.rx_divisor;
