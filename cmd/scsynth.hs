@@ -1,11 +1,12 @@
 import Control.Exception {- base -}
 import Control.Monad {- base -}
+import Control.Monad.IO.Class {- base -}
 import qualified Data.Tree as T {- containers -}
 import System.Environment {- base -}
 import System.FilePath {- filepath -}
 import System.IO {- base -}
 
-import Sound.OSC {- hosc -}
+import Sound.Osc {- hosc -}
 import Sound.SC3 {- hsc3 -}
 
 import qualified Sound.SC3.Server.Graphdef as Graphdef {- hsc3 -}
@@ -58,11 +59,11 @@ buffer_store_seq n dt iso dir = do
 clear_all :: IO ()
 clear_all = withSC3 (sendBundle (bundle immediately [g_freeAll [0],clearSched]))
 
--- * DUMP-OSC
+-- * DUMP-Osc
 
 -- > dump_osc 1
 dump_osc :: Int -> IO ()
-dump_osc md = withSC3 (sendMessage (message "/dumpOSC" [int32 md]))
+dump_osc md = withSC3 (sendMessage (message "/dumpOsc" [int32 md]))
 
 -- * GROUP
 
@@ -150,10 +151,10 @@ scsyndef_dump_ugens sy_nm = do
 
 message_print :: String -> IO ()
 message_print addr =
-    let pr = waitReply addr >>= \r -> liftIO (putStrLn (messagePP (Just 4) r))
+    let pr = waitReply addr >>= \r -> liftIO (putStrLn (messagePp (Just 4) r))
     in withSC3 (async_ (notify True) >> forever pr)
 
-status_monitor :: (DuplexOSC m,MonadIO m) => Double -> m ()
+status_monitor :: (DuplexOsc m,MonadIO m) => Double -> m ()
 status_monitor dly = do
   str <- server_status_concise
   liftIO (hPutStr stdout ('\r' : str) >> hFlush stdout)
