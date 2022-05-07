@@ -10,14 +10,16 @@ import Sound.Osc {- hosc -}
 import Sound.SC3 {- hsc3 -}
 
 import qualified Sound.SC3.Server.Graphdef as Graphdef {- hsc3 -}
-import qualified Sound.SC3.Server.Graphdef.Read as Read {- hsc3 -}
-import qualified Sound.SC3.Server.Graphdef.Text as Graphdef {- hsc3 -}
+import qualified Sound.SC3.Server.Graphdef.Binary as  Graphdef.Binary {- hsc3 -}
+import qualified Sound.SC3.Server.Graphdef.IO as  Graphdef.IO {- hsc3 -}
+import qualified Sound.SC3.Server.Graphdef.Read as Graphdef.Read {- hsc3 -}
+import qualified Sound.SC3.Server.Graphdef.Text as Graphdef.Text {- hsc3 -}
 import qualified Sound.SC3.Server.Nrt.Stat as Nrt {- hsc3 -}
 import qualified Sound.SC3.UGen.Graph.Reconstruct as Reconstruct {- hsc3 -}
 
 import qualified Sound.File.NeXT as SF {- hsc3-sf -}
 
--- * UTIL
+-- * Util
 
 kv_table_pp :: [(String,String)] -> [String]
 kv_table_pp tbl =
@@ -25,7 +27,7 @@ kv_table_pp tbl =
         pp (k,v) = k ++ replicate (lm - length k) ' ' ++ " : " ++ v
     in map pp tbl
 
--- * BUFFER
+-- * Buffer
 
 -- > buffer_free_range 0 100
 buffer_free_range :: Int -> Int -> IO ()
@@ -48,24 +50,24 @@ buffer_store n fn = do
 buffer_store_seq :: Int -> Double -> Bool -> FilePath -> IO ()
 buffer_store_seq n dt iso dir = do
   let run = do t <- time
-               let t' = if iso then time_pp t else show (ntpr_to_ntpi t)
+               let t' = if iso then show t else show (ntpr_to_ntpi t)
                    fn = dir </> t' <.> "au"
                buffer_store n fn
                pauseThread dt
   forever run
 
--- * CLEAR
+-- * Clear
 
 clear_all :: IO ()
 clear_all = withSC3 (sendBundle (bundle immediately [g_freeAll [0],clearSched]))
 
--- * DUMP-Osc
+-- * Dump Osc
 
 -- > dump_osc 1
 dump_osc :: Int -> IO ()
 dump_osc md = withSC3 (sendMessage (message "/dumpOsc" [int32 md]))
 
--- * GROUP
+-- * Group
 
 -- > group_query_tree 0
 group_query_tree :: Int -> IO ()
@@ -74,7 +76,7 @@ group_query_tree n = do
   let tr = queryTree_rt qt
   putStrLn (unlines ["::GROUP QUERY TREE::",T.drawTree (fmap query_node_pp tr)])
 
--- * NODE
+-- * Node
 
 -- > node_query 1
 node_query :: Int -> IO ()
@@ -85,7 +87,7 @@ node_query n = do
     _ -> let tbl = zip (map (\(_,nm,_) -> nm) n_info_fields) (map show r)
          in putStrLn (unlines (kv_table_pp tbl))
 
--- * WAIT-FOR
+-- * Wait for
 
 wait_for :: IO ()
 wait_for = do
@@ -95,7 +97,7 @@ wait_for = do
       h = catch f g
   putStrLn "wait_for: begin" >> h >> putStrLn "wait_for: end"
 
--- * SCSYNDEF
+-- * Scsyndef
 
 {-
 import qualified Sound.SC3.Server.Graphdef as Graphdef {- hsc3 -}
@@ -111,47 +113,47 @@ scsyndef_stat sy_nm st_nm = do
 -- > scsyndef_ug_stat sy "/dev/stdout"
 scsyndef_ug_stat :: FilePath -> FilePath -> IO ()
 scsyndef_ug_stat sy_nm st_nm = do
-  str <- Read.scsyndef_ug_stat sy_nm
+  str <- Graphdef.Read.scsyndef_ug_stat sy_nm
   writeFile st_nm str
 
 -- > Just sy <- UI.ui_choose_file "/home/rohan/sw/hsc3-graphs/db/"
 -- > scsyndef_to_hs sy "/dev/stdout"
 scsyndef_to_hs :: FilePath -> FilePath -> IO ()
 scsyndef_to_hs sy_nm hs_nm = do
-  gr <- Graphdef.read_graphdef_file sy_nm
+  gr <- Graphdef.IO.read_graphdef_file sy_nm
   let nm = dropExtension (takeFileName sy_nm) -- ascii_to_string (R.graphdef_name gr)
-      (_,gr') = Read.graphdef_to_graph gr
+      (_,gr') = Graphdef.Read.graphdef_to_graph gr
       hs = Reconstruct.reconstruct_graph_module nm gr'
   writeFile hs_nm (unlines hs)
 
 -- > UI.ui_choose_file "/home/rohan/sw/hsc3-graphs/db/" >>= maybe (return ()) scsyndef_play
 scsyndef_play :: FilePath -> IO ()
 scsyndef_play sy_nm = do
-  gr <- Graphdef.read_graphdef_file sy_nm
+  gr <- Graphdef.IO.read_graphdef_file sy_nm
   audition gr
 
 -- > UI.ui_choose_file "/home/rohan/sw/hsc3-graphs/db/" >>= maybe (return ()) (scsyndef_print True)
 scsyndef_print :: Bool -> FilePath -> IO ()
 scsyndef_print with_com sy_nm = do
-  gr <- Graphdef.read_graphdef_file sy_nm
-  putStrLn (Graphdef.print_graphdef with_com gr)
+  gr <- Graphdef.IO.read_graphdef_file sy_nm
+  putStrLn (Graphdef.Text.print_graphdef with_com gr)
 
 scsyndef_read :: FilePath -> FilePath -> IO ()
 scsyndef_read txt_fn sy_fn = do
   txt <- readFile txt_fn
-  Graphdef.graphdefWrite sy_fn (Graphdef.read_graphdef txt)
+  Graphdef.Binary.graphdefWrite sy_fn (Graphdef.Text.read_graphdef txt)
 
 -- > UI.ui_choose_file "/home/rohan/sw/hsc3-graphs/db/" >>= maybe (return ()) scsyndef_dump_ugens
 scsyndef_dump_ugens :: FilePath -> IO ()
 scsyndef_dump_ugens sy_nm = do
-  gr <- Graphdef.read_graphdef_file sy_nm
+  gr <- Graphdef.IO.read_graphdef_file sy_nm
   Graphdef.graphdef_dump_ugens gr
 
--- * STATUS
+-- * Status
 
 message_print :: String -> IO ()
 message_print addr =
-    let pr = waitReply addr >>= \r -> liftIO (putStrLn (messagePp (Just 4) r))
+    let pr = waitReply addr >>= \r -> liftIO (putStrLn (showMessage (Just 4) r))
     in withSC3 (async_ (notify True) >> forever pr)
 
 status_monitor :: (DuplexOsc m,MonadIO m) => Double -> m ()
@@ -160,7 +162,7 @@ status_monitor dly = do
   liftIO (hPutStr stdout ('\r' : str) >> hFlush stdout)
   pauseThread dly
 
--- * MAIN
+-- * Main
 
 help :: [String]
 help =
