@@ -65,7 +65,7 @@ clear_all = withSC3 (sendBundle (bundle immediately [g_freeAll [0],clearSched]))
 
 -- > dump_osc 1
 dump_osc :: Int -> IO ()
-dump_osc md = withSC3 (sendMessage (message "/dumpOsc" [int32 md]))
+dump_osc md = withSC3 (sendMessage (dumpOsc (toEnum md)))
 
 -- * Group
 
