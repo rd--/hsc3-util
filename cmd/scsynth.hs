@@ -7,17 +7,17 @@ import System.FilePath {- filepath -}
 import System.IO {- base -}
 
 import Sound.Osc {- hosc -}
-import Sound.SC3 {- hsc3 -}
+import Sound.Sc3 {- hsc3 -}
 
-import qualified Sound.SC3.Server.Graphdef as Graphdef {- hsc3 -}
-import qualified Sound.SC3.Server.Graphdef.Binary as  Graphdef.Binary {- hsc3 -}
-import qualified Sound.SC3.Server.Graphdef.IO as  Graphdef.IO {- hsc3 -}
-import qualified Sound.SC3.Server.Graphdef.Read as Graphdef.Read {- hsc3 -}
-import qualified Sound.SC3.Server.Graphdef.Text as Graphdef.Text {- hsc3 -}
-import qualified Sound.SC3.Server.Nrt.Stat as Nrt {- hsc3 -}
-import qualified Sound.SC3.UGen.Graph.Reconstruct as Reconstruct {- hsc3 -}
+import qualified Sound.Sc3.Server.Graphdef as Graphdef {- hsc3 -}
+import qualified Sound.Sc3.Server.Graphdef.Binary as  Graphdef.Binary {- hsc3 -}
+import qualified Sound.Sc3.Server.Graphdef.Io as  Graphdef.Io {- hsc3 -}
+import qualified Sound.Sc3.Server.Graphdef.Read as Graphdef.Read {- hsc3 -}
+import qualified Sound.Sc3.Server.Graphdef.Text as Graphdef.Text {- hsc3 -}
+import qualified Sound.Sc3.Server.Nrt.Stat as Nrt {- hsc3 -}
+import qualified Sound.Sc3.Ugen.Graph.Reconstruct as Reconstruct {- hsc3 -}
 
-import qualified Sound.File.NeXT as SF {- hsc3-sf -}
+import qualified Sound.File.Next as Sf {- hsc3-sf -}
 
 -- * Util
 
@@ -31,21 +31,21 @@ kv_table_pp tbl =
 
 -- > buffer_free_range 0 100
 buffer_free_range :: Int -> Int -> IO ()
-buffer_free_range b0 bN = withSC3 (mapM_ (\n -> async (b_free n)) [b0 .. bN])
+buffer_free_range b0 bN = withSc3 (mapM_ (\n -> async (b_free n)) [b0 .. bN])
 
 -- > buffer_query 0
 buffer_query :: Int -> IO ()
 buffer_query n = do
-  (n',nf,nc,sr) <- withSC3 (b_query1_unpack n)
+  (n',nf,nc,sr) <- withSc3 (b_query1_unpack n)
   let k = map snd b_info_fields
       v = [show n',show nf,show nc,show sr]
   putStrLn (unlines (kv_table_pp (zip k v)))
 
 buffer_store :: Int -> FilePath -> IO ()
 buffer_store n fn = do
-  ((_,nf,nc,sr),d) <- withSC3 (b_fetch_hdr 512 n)
-  let hdr = SF.SF_Header nf SF.Float (round sr) nc
-  SF.au_write fn hdr d
+  ((_,nf,nc,sr),d) <- withSc3 (b_fetch_hdr 512 n)
+  let hdr = Sf.Sf_Header nf Sf.Float (round sr) nc
+  Sf.au_write fn hdr d
 
 buffer_store_seq :: Int -> Double -> Bool -> FilePath -> IO ()
 buffer_store_seq n dt iso dir = do
@@ -59,20 +59,20 @@ buffer_store_seq n dt iso dir = do
 -- * Clear
 
 clear_all :: IO ()
-clear_all = withSC3 (sendBundle (bundle immediately [g_freeAll [0],clearSched]))
+clear_all = withSc3 (sendBundle (bundle immediately [g_freeAll [0],clearSched]))
 
 -- * Dump Osc
 
 -- > dump_osc 1
 dump_osc :: Int -> IO ()
-dump_osc md = withSC3 (sendMessage (dumpOsc (toEnum md)))
+dump_osc md = withSc3 (sendMessage (dumpOsc (toEnum md)))
 
 -- * Group
 
 -- > group_query_tree 0
 group_query_tree :: Int -> IO ()
 group_query_tree n = do
-  qt <- withSC3 (g_queryTree1_unpack n)
+  qt <- withSc3 (g_queryTree1_unpack n)
   let tr = queryTree_rt qt
   putStrLn (unlines ["::GROUP QUERY TREE::",T.drawTree (fmap query_node_pp tr)])
 
@@ -81,7 +81,7 @@ group_query_tree n = do
 -- > node_query 1
 node_query :: Int -> IO ()
 node_query n = do
-  r <- withSC3 (withNotifications (n_query1_unpack_plain n))
+  r <- withSc3 (withNotifications (n_query1_unpack_plain n))
   case r of
     [] -> error "node_query"
     _ -> let tbl = zip (map (\(_,nm,_) -> nm) n_info_fields) (map show r)
@@ -92,7 +92,7 @@ node_query n = do
 wait_for :: IO ()
 wait_for = do
   let w = pauseThread (0.25::Double)
-      f = withSC3_ (sendMessage (c_get [0]) >> waitReply "/c_set")
+      f = withSc3_ (sendMessage (c_get [0]) >> waitReply "/c_set")
       g e = print ("wait_for: retry",e::IOError) >> w >> h
       h = catch f g
   putStrLn "wait_for: begin" >> h >> putStrLn "wait_for: end"
@@ -100,7 +100,7 @@ wait_for = do
 -- * Scsyndef
 
 {-
-import qualified Sound.SC3.Server.Graphdef as Graphdef {- hsc3 -}
+import qualified Sound.Sc3.Server.Graphdef as Graphdef {- hsc3 -}
 
 -- > let sy = "/home/rohan/sw/hsc3-graphs/scsyndef/why-supercollider-rand.sc.scsyndef"
 -- > scsyndef_stat sy "/dev/stdout"
@@ -120,7 +120,7 @@ scsyndef_ug_stat sy_nm st_nm = do
 -- > scsyndef_to_hs sy "/dev/stdout"
 scsyndef_to_hs :: FilePath -> FilePath -> IO ()
 scsyndef_to_hs sy_nm hs_nm = do
-  gr <- Graphdef.IO.read_graphdef_file sy_nm
+  gr <- Graphdef.Io.read_graphdef_file sy_nm
   let nm = dropExtension (takeFileName sy_nm) -- ascii_to_string (R.graphdef_name gr)
       (_,gr') = Graphdef.Read.graphdef_to_graph gr
       hs = Reconstruct.reconstruct_graph_module nm gr'
@@ -129,13 +129,13 @@ scsyndef_to_hs sy_nm hs_nm = do
 -- > UI.ui_choose_file "/home/rohan/sw/hsc3-graphs/db/" >>= maybe (return ()) scsyndef_play
 scsyndef_play :: FilePath -> IO ()
 scsyndef_play sy_nm = do
-  gr <- Graphdef.IO.read_graphdef_file sy_nm
+  gr <- Graphdef.Io.read_graphdef_file sy_nm
   audition gr
 
 -- > UI.ui_choose_file "/home/rohan/sw/hsc3-graphs/db/" >>= maybe (return ()) (scsyndef_print True)
 scsyndef_print :: Bool -> FilePath -> IO ()
 scsyndef_print with_com sy_nm = do
-  gr <- Graphdef.IO.read_graphdef_file sy_nm
+  gr <- Graphdef.Io.read_graphdef_file sy_nm
   putStrLn (Graphdef.Text.print_graphdef with_com gr)
 
 scsyndef_read :: FilePath -> FilePath -> IO ()
@@ -146,7 +146,7 @@ scsyndef_read txt_fn sy_fn = do
 -- > UI.ui_choose_file "/home/rohan/sw/hsc3-graphs/db/" >>= maybe (return ()) scsyndef_dump_ugens
 scsyndef_dump_ugens :: FilePath -> IO ()
 scsyndef_dump_ugens sy_nm = do
-  gr <- Graphdef.IO.read_graphdef_file sy_nm
+  gr <- Graphdef.Io.read_graphdef_file sy_nm
   Graphdef.graphdef_dump_ugens gr
 
 -- * Status
@@ -154,7 +154,7 @@ scsyndef_dump_ugens sy_nm = do
 message_print :: String -> IO ()
 message_print addr =
     let pr = waitReply addr >>= \r -> liftIO (putStrLn (showMessage (Just 4) r))
-    in withSC3 (async_ (notify True) >> forever pr)
+    in withSc3 (async_ (notify True) >> forever pr)
 
 status_monitor :: (DuplexOsc m,MonadIO m) => Double -> m ()
 status_monitor dly = do
@@ -200,7 +200,7 @@ main = do
     ["dump-osc",md] -> dump_osc (read md)
     ["group","query-tree",n] -> group_query_tree (read n)
     ["node","query",n] -> node_query (read n)
-    ["reset"] -> withSC3 reset
+    ["reset"] -> withSc3 reset
     ["scsyndef","dump-ugens",sy] -> scsyndef_dump_ugens sy
     ["scsyndef","play",sy] -> scsyndef_play sy
     ["scsyndef","print",with_com,sy] -> scsyndef_print (read with_com) sy
@@ -211,8 +211,8 @@ main = do
     ["scsyndef","to-hs"] -> scsyndef_to_hs "/dev/stdin" "/dev/stdout"
     ["scsyndef","to-hs",sy] -> scsyndef_to_hs sy "/dev/stdout"
     ["scsyndef","to-hs",sy,hs] -> scsyndef_to_hs sy hs
-    ["status","print"] -> withSC3 serverStatus >>= mapM_ putStrLn
-    ["status","monitor",dly] -> withSC3 (forever (status_monitor (read dly)))
+    ["status","print"] -> withSc3 serverStatus >>= mapM_ putStrLn
+    ["status","monitor",dly] -> withSc3 (forever (status_monitor (read dly)))
     ["message","print",addr] -> message_print addr
     ["nrt","audition",fn] -> readNrt fn >>= nrt_audition
     ["nrt","stat",fn] -> readNrt fn >>= print . Nrt.nrt_stat

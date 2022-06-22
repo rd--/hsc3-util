@@ -2,43 +2,43 @@ import Data.List {- base -}
 
 import qualified Text.CSV.Lazy.String as CSV {- lazy-csv -}
 
-import Sound.OSC {- hosc -}
+import Sound.Osc {- hosc -}
 
-import Sound.SC3 {- hsc3 -}
-import Sound.SC3.Common.Base {- hsc3 -}
+import Sound.Sc3 {- hsc3 -}
+import Sound.Sc3.Common.Base {- hsc3 -}
 
 -- | (time,voice,event)
-type REventTrace = (Double,Int,REvent Double)
+type EventTrace = (Double,Int,Event Double)
 
 -- | Load CSV trace file
-rEventTrace_load :: FilePath -> IO [REventTrace]
-rEventTrace_load fn = do
+ccEventTrace_load :: FilePath -> IO [EventTrace]
+ccEventTrace_load fn = do
   txt <- readFile fn
   let tbl = CSV.csvTable (CSV.parseDSV False ',' txt)
-  return (map (\(tm:ix:ev) -> (read tm,read ix,rEvent_from_list (map read ev))) (CSV.fromCSVTable tbl))
+  return (map (\(tm:ix:ev) -> (read tm,read ix,ccEvent_from_list (map read ev))) (CSV.fromCSVTable tbl))
 
 -- | Get delta-time sequence of trace
-rEventTrace_dt :: [REventTrace] -> [Double]
-rEventTrace_dt tr = let tm = map (\(t,_,_) -> t) tr in d_dx tm
+ccEventTrace_dt :: [EventTrace] -> [Double]
+ccEventTrace_dt tr = let tm = map (\(t,_,_) -> t) tr in d_dx tm
 
 -- | Pause for delta time, then send trace event
-rEventTrace_send :: (MonadIO m,SendOSC m) => (Double,REventTrace) -> m ()
-rEventTrace_send (dt,(_,k,(w,x,y,z,o,rx,ry,p,px,_))) = do
+ccEventTrace_send :: (MonadIO m,SendOsc m) => (Double,EventTrace) -> m ()
+ccEventTrace_send (dt,(_,k,(w,x,y,z,o,rx,ry,p,px))) = do
   let msg = c_setn1 (13000 + (k * 10),[w,x,y,z,o,rx,ry,p,px])
   pauseThread dt
   sendMessage msg
 
--- | Run rEventTrace_send over trace
-rEventTrace_replay :: [REventTrace] -> IO ()
-rEventTrace_replay tr = withSC3 (mapM_ rEventTrace_send (zip (rEventTrace_dt tr) tr))
+-- | Run ccEventTrace_send over trace
+ccEventTrace_replay :: [EventTrace] -> IO ()
+ccEventTrace_replay tr = withSc3 (mapM_ ccEventTrace_send (zip (ccEventTrace_dt tr) tr))
 
 -- | Select w=0 events
-rEventTrace_is_end :: REventTrace -> Bool
-rEventTrace_is_end (_,_,(w,_,_,_,_,_,_,_,_,_)) = not (w > 0)
+ccEventTrace_is_end :: EventTrace -> Bool
+ccEventTrace_is_end (_,_,(w,_,_,_,_,_,_,_,_)) = not (w > 0)
 
 -- | Re-assign k in trace using a strict lowest voice number not used algorithm.
-rEventTrace_reassign :: [REventTrace] -> [REventTrace]
-rEventTrace_reassign tr =
+ccEventTrace_reassign :: [EventTrace] -> [EventTrace]
+ccEventTrace_reassign tr =
   {-
   rw :: [(Int,Int)] ; store which k are being written using a [(k,k')] set
   rw_get_k ; lookup where k is re-writing to, or nothing if k is an onset (ie. not in rw)
@@ -56,7 +56,7 @@ rEventTrace_reassign tr =
   in snd (mapAccumL f [] tr)
 
 {-
-tr <- rEventTrace_load "/home/rohan/sw/hsc3-util/cmd/trace.csv"
-tr' = rEventTrace_reassign tr
-rEventTrace_replay tr'
+tr <- ccEventTrace_load "/home/rohan/sw/hsc3-util/cmd/trace.csv"
+tr' = ccEventTrace_reassign tr
+ccEventTrace_replay tr'
 -}
