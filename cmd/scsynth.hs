@@ -7,6 +7,7 @@ import System.FilePath {- filepath -}
 import System.IO {- base -}
 
 import Sound.Osc {- hosc -}
+import Sound.Osc.Text {- hosc3 -}
 import Sound.Sc3 {- hsc3 -}
 
 import qualified Sound.Sc3.Server.Graphdef as Graphdef {- hsc3 -}
