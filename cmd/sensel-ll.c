@@ -21,7 +21,7 @@
 
 void sensel_handle_error(SenselStatus err) {
     if (err != SENSEL_OK) {
-        fprintf(stderr,"sensel_handle_error: NOT SENSEL_OK");
+        fprintf(stderr,"sensel_handle_error: not SENSEL_OK");
         exit(1);
     }
 }
@@ -494,6 +494,8 @@ int sensel_grid_load_csv(char *fn, int k_max, grid_elem_t *g, int *nr, int *nc) 
     return k;
 }
 
+float unitCpsDivisor = 100.0;
+
 int sensel_grid_default(grid_elem_t *g, float p0, int k, int *nr, int *nc) {
     float x = 0.0;
     float x_incr = 1.0 / (float)k;
@@ -505,7 +507,7 @@ int sensel_grid_default(grid_elem_t *g, float p0, int k, int *nr, int *nc) {
         g[i].w = x_incr;
         g[i].h = 1.0;
         x += x_incr;
-        n += 1.0 / 127.0;
+        n += 1.0 / unitCpsDivisor;
     }
     *nr = 1;
     *nc = k;
@@ -547,7 +549,7 @@ void sensel_send_osc(const sensel_usr_opt opt) {
     int grid_k =
         opt.grid_fn ?
         sensel_grid_load_csv(opt.grid_fn, grid_max, grid, &grid_nr, &grid_nc) :
-        sensel_grid_default(grid, 48.0 / 127.0, 13, &grid_nr, &grid_nc);
+        sensel_grid_default(grid, 48.0 / unitCpsDivisor, 13, &grid_nr, &grid_nc);
     FILE *trace_fp = NULL;
     if(opt.trace_fn) {
         trace_fp = fopen(opt.trace_fn,"w");
@@ -632,7 +634,7 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             float r_diff = 10.0;
                             ev.rx = (frame->contacts[c].major_axis - r_diff) / opt.rx_divisor;
                             ev.ry = (frame->contacts[c].minor_axis - r_diff) / opt.ry_divisor;
-                            ev.p = 48.0 / 127.0;
+                            ev.p = 48.0 / unitCpsDivisor;
                             ev.px = 0.0;
                             ev.py = 0.0;
                             sensel_grid_nearest_ix(grid, grid_k, ev.x, ev.y, &(ev.p), &(ev.px), &(ev.py));
