@@ -207,9 +207,10 @@ void sensel_print_accel_data(void) {
 typedef struct {
     bool text_mode;
     bool print_devices;
+    enum SocketType protocol;
     char hostname[HOST_NAME_MAX];
     uint16_t port;
-    int p_seq; /* number of sequential UDP ports that control data can be sent to */
+    int p_seq; /* number of sequential Tcp/Udp ports that control data can be sent to */
     bool voice_assign;
     int k0;
     int v0;
@@ -230,6 +231,7 @@ typedef struct {
 
 void sensel_usr_opt_print(const sensel_usr_opt opt) {
     printf("-a char aspect=%c\n", opt.aspect);
+    printf("-c str  protocol=%s\n", opt.protocol == TcpSocket ? "tcp" : (opt.protocol == UdpSocket ? "udp" : "?"));
     printf("-d bool print_devices=%s\n", opt.print_devices ? "true" : "false");
     printf("-f int  contactsMinForce=%hu\n", opt.contactsMinForce);
     printf("-g str  grid_fn=%s\n",opt.grid_fn);
@@ -255,6 +257,7 @@ void sensel_usr_opt_default(sensel_usr_opt *opt) {
     opt->text_mode = false;
     opt->voice_assign = true;
     opt->usr_ct_max = 16;
+    opt->protocol = TcpSocket;
     strncpy(opt->hostname,"localhost",HOST_NAME_MAX - 1);
     opt->port = 57110;
     opt->p_seq = 1;
@@ -279,6 +282,7 @@ void sensel_usr_opt_usage(void) {
     sensel_usr_opt_default(&opt);
     printf("hsc3-sensel\n");
     printf("  -a CHAR aspect ratio (default=%c valid=[i,x,y])\n", opt.aspect);
+    printf("  -c STR  connection protocol (default=%s valid=[tcp,udp])\n", opt.protocol == TcpSocket ? "tcp" : "udp");
     printf("  -d      print device information (default=%s)\n", opt.print_devices ? "true" : "false");
     printf("  -e      latch z, ie. initial z value is retained (default=%s)\n", opt.latch_z ? "true" : "false");
     printf("  -f      set ContactsMinForce (default=%hu valid=[8,16,24...])\n", opt.contactsMinForce);
@@ -292,7 +296,7 @@ void sensel_usr_opt_usage(void) {
     printf("  -o INT  set v0 (default=%d)\n",opt.v0);
     printf("  -p INT  set port number (default=%hu)\n",opt.port);
     printf("  -r INT  set scan rate (default=%hu max=detail:medium:250,detail:low:1000)\n",opt.scan_rate);
-    printf("  -s INT  set number of sequential UDP ports voices are distributed across (default=%d)\n",opt.p_seq);
+    printf("  -s INT  set number of sequential Tcp/Udp ports voices are distributed across (default=%d)\n",opt.p_seq);
     printf("  -t      set text output mode (default=%s)\n",opt.text_mode ? "true" : "false");
     printf("  -v      set voice assign mode (default=%s)\n",opt.voice_assign ? "true" : "false");
     printf("  -w STR  write trace text to output file (default=nil)\n");
@@ -303,13 +307,16 @@ void sensel_usr_opt_usage(void) {
 
 int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
     int c;
-    while ((c = getopt(argc, argv, "a:def:g:hi:k:lm:n:o:p:r:s:tvw:x:z:")) != -1) {
+    while ((c = getopt(argc, argv, "a:c:def:g:hi:k:lm:n:o:p:r:s:tvw:x:z:")) != -1) {
         switch (c) {
         case 'a':
             opt->aspect = optarg[0];
             if(opt->aspect != 'i' && opt->aspect != 'x' && opt->aspect != 'y') {
                 sensel_usr_opt_usage();
             }
+            break;
+        case 'c':
+            opt->protocol = socket_type_parse(optarg);
             break;
         case 'd':
             opt->print_devices = true;
@@ -535,10 +542,9 @@ void sense_write_trace(FILE *fp, double tm0, const event_data_t ev) {
 }
 
 void sensel_send_osc(const sensel_usr_opt opt) {
-    int osc_fd = socket_udp(0);
-    struct sockaddr_in addr[opt.p_seq];
+    osc_socket_t osc_socket[opt.p_seq];
     for (int i = 0; i < opt.p_seq; i++) {
-        init_sockaddr_in(&addr[i], opt.hostname, opt.port + i);
+	osc_socket[i] = osc_socket_open(opt.protocol, opt.hostname, opt.port + i);
     }
     const int osc_buf_max = 256;
     uint8_t osc_buf[osc_buf_max];
@@ -644,7 +650,7 @@ void sensel_send_osc(const sensel_usr_opt opt) {
                             int osc_msg_sz = osc_build_message(osc_buf, k, "/c_setn", ",iiffffffffff", k, 10,
                                                                ev.w, ev.x, ev.y, ev.z, ev.o, ev.rx, ev.ry, ev.p, ev.px, ev.py);
                             dprintf("voice_id=%d opt.p_seq=%d addr_ix=%d\n", ev.id, opt.p_seq, ev.id % opt.p_seq);
-                            sendto_exactly(osc_fd, osc_buf, osc_msg_sz, addr[ev.id % opt.p_seq]);
+                            osc_socket_send_packet(osc_socket[ev.id % opt.p_seq], osc_buf, osc_msg_sz);
                             /* set LED status */
                             if (opt.set_led && state == CONTACT_START) {
                                 senselSetLEDBrightness(sensel, ev.id, 100);
@@ -661,7 +667,9 @@ void sensel_send_osc(const sensel_usr_opt opt) {
     senselStopScanning(sensel);
     senselFreeFrameData(sensel,frame);
     senselClose(sensel);
-    close(osc_fd);
+    for (int i = 0; i < opt.p_seq; i++) {
+	osc_socket_close(osc_socket[i]);
+    }
     if(trace_fp) {
         fclose(trace_fp);
     }
