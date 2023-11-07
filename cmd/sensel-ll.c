@@ -208,7 +208,7 @@ typedef struct {
     bool text_mode;
     bool print_devices;
     enum SocketType protocol;
-    char hostname[HOST_NAME_MAX];
+    char hostname[_POSIX_HOST_NAME_MAX];
     uint16_t port;
     int p_seq; /* number of sequential Tcp/Udp ports that control data can be sent to */
     bool voice_assign;
