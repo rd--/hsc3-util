@@ -7,7 +7,7 @@ CC = gcc # gcc ; clang
 
 CPPFLAGS += -Wall -pedantic -O3 -g
 CFLAGS += -D_POSIX_C_SOURCE=200809 -std=c99
-LDLIBS = r-common/c/lib-r-common.a -ljack -lpthread -lm
+LDLIBS = r-common/c/lib-r-common.a -lpthread -lm
 
 sensel-ll: sensel-ll.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o sensel-ll sensel-ll.c $(LDLIBS) -lsensel
