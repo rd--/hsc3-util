@@ -258,7 +258,7 @@ void sensel_usr_opt_default(sensel_usr_opt *opt) {
     opt->voice_assign = true;
     opt->usr_ct_max = 16;
     opt->protocol = TcpSocket;
-    strncpy(opt->hostname,"localhost",HOST_NAME_MAX - 1);
+    strncpy(opt->hostname,"localhost",_POSIX_HOST_NAME_MAX - 1);
     opt->port = 57110;
     opt->p_seq = 1;
     opt->k0 = 13000;
@@ -346,7 +346,7 @@ int sensel_usr_opt_parse(sensel_usr_opt *opt,int argc, char **argv) {
             opt->usr_ct_max = (int)strtol(optarg, NULL, 0);
             break;
         case 'n':
-            strncpy(opt->hostname,optarg,HOST_NAME_MAX - 1);
+            strncpy(opt->hostname,optarg,_POSIX_HOST_NAME_MAX - 1);
             break;
         case 'o':
             opt->v0 = (int)strtol(optarg, NULL, 0);
