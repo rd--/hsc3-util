@@ -23,7 +23,7 @@ mk-r-common:
 # building libsenselnp.so requires editing sensel-api/sensel-lib/Makefile.
 
 SENSEL_DIR = $(HOME)/opt/src/sensel/sensel-api/sensel-lib/
-SENSEL_OBJ_DIR = $(SENSEL_OBJ)/build/release/nopressure/obj
+SENSEL_OBJ_DIR = $(SENSEL_DIR)/build/release/nopressure/obj
 SENSEL_OBJ = $(SENSEL_OBJ_DIR)/sensel.o $(SENSEL_OBJ_DIR)/sensel_register.o $(SENSEL_OBJ_DIR)/sensel_serial_linux.o
 
 sensel-ll-np-static: sensel-ll.c
