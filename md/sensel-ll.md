@@ -14,21 +14,26 @@ each voice.  (ie. k0, k0+i, k0+i+i...)
 ~~~~
 $ hsc3-sensel-ll -h
 hsc3-sensel-ll
-  -a CHAR aspect ratio (default=i)
+  -a CHAR aspect ratio (default=i valid=[i,x,y])
+  -c STR  connection protocol (default=tcp valid=[tcp,udp])
   -d      print device information (default=false)
+  -e      latch z, ie. initial z value is retained (default=false)
   -f      set ContactsMinForce (default=24 valid=[8,16,24...])
   -g STR  set grid data (csv format) file name (default=nil)
   -h      print help
   -i INT  set index increment for voice data (default=10)
   -k INT  set k0 (default=13000)
+  -l      illuminate leds (default=true)
   -m INT  set number of monitored contacts (default=16)
   -n STR  set hostname (default=localhost)
+  -o INT  set v0 (default=0)
   -p INT  set port number (default=57110)
-  -r INT  set scan rate (default=125)
-  -s INT  set number of sequential UDP ports voices are distributed across (default=1)
+  -r INT  set scan rate (default=125 max=detail:medium:250,detail:low:1000)
+  -s INT  set number of sequential Tcp/Udp ports voices are distributed across (default=1)
   -t      set text output mode (default=false)
   -v      set voice assign mode (default=true)
-  -x      set scan detail to high (default=medium)
+  -w STR  write trace text to output file (default=nil)
+  -x INT  set scan detail (default=medium) 0=high 1=medium 2=low
   -z NUM  set z divisor (default=2048.0)
 $
 ~~~~
@@ -36,7 +41,7 @@ $
 The `-s` option allows for control data to be distributed across
 multiple processes (and hence processors).
 
-The argument determines the number of sequential UDP ports, starting
+The argument determines the number of sequential Tcp/Udp ports, starting
 from the port indicated by `-p`, that control messages should be
 distributed across.
 
@@ -57,7 +62,7 @@ The sensor is wider (230mm) than it is tall (130mm).
 The `-e` option latches the _z_ field, that is it remains set at the level recorded at the start of the contact.
 This makes testing programs intended for keyboard input, with an envelope generator, simpler.
 
-The `-g` option reads grid data from a CSV file. The fixed fields are:
+The `-g` option reads grid data from a Csv file. The fixed fields are:
 
 1. row index
 2. column index
