@@ -1,6 +1,6 @@
 # hsc3-sensel-ll
 
-Command that connects to a Sensel device using the sensel-api and writes contact data to OSC packets.
+Command that connects to a Sensel device using the sensel-api and writes contact data to [Osc](https://ccrma.stanford.edu/groups/osc/index.html) packets.
 
 Packet data is of the form: _/c_setn k 10 g x y z o rx ry p px py_ where
 `k`=ctl-ix `g`=gate, `x`=x-axis, `y`=y-axis, `z`=z-axiz,
@@ -62,7 +62,7 @@ The sensor is wider (230mm) than it is tall (130mm).
 The `-e` option latches the _z_ field, that is it remains set at the level recorded at the start of the contact.
 This makes testing programs intended for keyboard input, with an envelope generator, simpler.
 
-The `-g` option reads grid data from a Csv file. The fixed fields are:
+The `-g` option reads grid data from a [Csv](https://www.ietf.org/rfc/rfc4180.txt) file. The fixed fields are:
 
 1. row index
 2. column index
