@@ -22,11 +22,12 @@ mk-r-common:
 # the distinct naming here is for testing on systems that have the standard -lsensel installed.
 # building libsenselnp.so requires editing sensel-api/sensel-lib/Makefile.
 
-SENSEL_DIR = $(HOME)/opt/src/sensel/sensel-api/sensel-lib/build/release/nopressure/obj
-SENSEL_OBJ = $(SENSEL_DIR)/sensel.o $(SENSEL_DIR)/sensel_register.o $(SENSEL_DIR)/sensel_serial_linux.o
+SENSEL_DIR = $(HOME)/opt/src/sensel/sensel-api/sensel-lib/
+SENSEL_OBJ_DIR = $(SENSEL_OBJ)/build/release/nopressure/obj
+SENSEL_OBJ = $(SENSEL_OBJ_DIR)/sensel.o $(SENSEL_OBJ_DIR)/sensel_register.o $(SENSEL_OBJ_DIR)/sensel_serial_linux.o
 
 sensel-ll-np-static: sensel-ll.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -o sensel-ll-np-static sensel-ll.c $(LDLIBS) $(SENSEL_OBJ)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -I$(SENSEL_DIR)/src -o sensel-ll-np-static sensel-ll.c $(LDLIBS) $(SENSEL_OBJ)
 
 sensel-ll-np: sensel-ll.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o sensel-ll-np sensel-ll.c $(LDLIBS) -lsenselnp
