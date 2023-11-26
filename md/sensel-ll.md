@@ -2,10 +2,10 @@
 
 Command that connects to a Sensel device using the sensel-api and writes contact data to [Osc](https://ccrma.stanford.edu/groups/osc/index.html) packets.
 
-Packet data is of the form: _/c_setn k 10 g x y z o rx ry p px py_ where
-`k`=ctl-ix `g`=gate, `x`=x-axis, `y`=y-axis, `z`=z-axiz,
-`o`=orientation, `rx`=x-radius, `ry`=y-radius,
-`p`=pitch, `px`=p-x-axis-distance `py`=p-y-axis-distance
+Packet data is of the form: _/c_setn v 10 w x y z o i j p x? y?_ where
+`v`=ctl-ix `w`=gate, `x`=x-axis, `y`=y-axis, `z`=z-axiz,
+`i`=orientation, `j`=x-radius, `k`=y-radius,
+`p`=pitch, `x?`=p-x-axis-distance `y?`=p-y-axis-distance
 
 Voice data is not necessarily packed.  Control indices start at k0
 (given by `-k`) and increment a number of places (given by `-i`) for
