@@ -1,14 +1,10 @@
-{-
+{- | Manta
 
-Translate MantaOsc messages to Sc3 Voicer
+Translate MantaOsc messages to Sc3 c_setn messages (c.f. Voicer)
 
-/manta/velocity/button index=(0,3) value=(0,210)
-/manta/continuous/button index=(0,3) value=(0,210)
-/manta/velocity/pad index=(0,47) value=(0,210)
-/manta/continuous/pad index=(0,47) value=(0,210)
-/manta/continuous/slider index=(0,1) value=(0,4096)
+<https://github.com/ssfrr/libmanta/tree/master/MantaOSC>
 
-Implement voicer algorithm, or assign key index.
+Implements voicer algorithm.
 
 -}
 
@@ -62,30 +58,34 @@ mantaKeyToXy index =
   in ((fromIntegral column + offset) / 7.5
      ,fromIntegral row / 5.0)
 
--- | (Index=(0,47),Value=(0,210))
-type Pad = (Int,Int)
+-- | There are 48 keys (Index=0-47,Value=0-210)
+type Key = (Int,Int)
 
--- | (Index=(0,1),Value=(0,4096))
+-- | There are 2 "sliders" (Index=0-1,Value=0-4096), store value for each.
 type Sliders = (Int,Int)
 
+-- | Map from key index to relative midi note number.
+type KeyMap = [(Int,Int)]
+
 {- | c_setn message. -}
-setMessage :: KeyMap -> Sliders -> Int -> Pad -> Osc.Fd.Message
-setMessage keyMap (i, j) v (index, value) =
+setMessage :: Double -> KeyMap -> Sliders -> Int -> Key -> Osc.Fd.Message
+setMessage noteOffset keyMap (i, j) v (index, value) =
   let w = 1
       (x,y) = mantaKeyToXy index
       z = fromIntegral value / 210.0
-      p = (36 + fromIntegral (List.lookup_err index keyMap)) / 100.0
+      p = (noteOffset + fromIntegral (List.lookup_err index keyMap)) / 100.0
   in Sc3.c_setn1
      (13000 + (v * 10)
      ,[w, x, y, z, fromIntegral i / 4096, fromIntegral j / 4096, 0, p])
 
-pad :: Int32 -> Int32 -> Pad
-pad index value = (fromIntegral index, fromIntegral value)
+keyOf :: Int32 -> Int32 -> Key
+keyOf index value = (fromIntegral index, fromIntegral value)
 
-type MantaParam = (KeyMap, Sliders, VoiceList.VoiceList)
+-- | (Note-Offset, Key-Map, Sliders, Voice-List)
+type MantaParam = (Double, KeyMap, Sliders, VoiceList.VoiceList)
 
 translateMessage :: MantaParam -> Osc.Message -> Maybe (VoiceList.VoiceList, Osc.Message)
-translateMessage (keyMap, sliders, voiceList) message =
+translateMessage (noteOffset, keyMap, sliders, voiceList) message =
   case message of
     Osc.Message "/manta/velocity/pad" [Osc.Int32 index, Osc.Int32 0]
       -> case VoiceList.freeId voiceList (fromIntegral index) of
@@ -95,11 +95,11 @@ translateMessage (keyMap, sliders, voiceList) message =
     Osc.Message "/manta/velocity/pad" [Osc.Int32 index, Osc.Int32 value]
       -> case VoiceList.allocId voiceList (fromIntegral index) of
            Just (v, voiceList') ->
-             Just (voiceList', setMessage keyMap sliders v (pad index value))
+             Just (voiceList', setMessage noteOffset keyMap sliders v (keyOf index value))
            Nothing -> Nothing
     Osc.Message "/manta/continuous/pad" [Osc.Int32 index, Osc.Int32 value]
       -> case VoiceList.readId voiceList (fromIntegral index) of
-           Just v -> Just (voiceList, setMessage keyMap sliders v (pad index value))
+           Just v -> Just (voiceList, setMessage noteOffset keyMap sliders v (keyOf index value))
            Nothing -> Nothing
     _ -> Nothing
 
@@ -133,7 +133,8 @@ processPacket keyMap (slidersRef, voiceListRef) mantaFd sc3Fd = do
   voiceList <- readIORef voiceListRef
   sliders <- readIORef slidersRef
   writeIORef slidersRef (updateSliders sliders message)
-  case translateMessage (keyMap, sliders, voiceList) message of
+  let noteOffset = 36
+  case translateMessage (noteOffset, keyMap, sliders, voiceList) message of
     Just (voiceList', answer) -> do
       sendMessage sc3Fd answer
       writeIORef voiceListRef voiceList'
@@ -147,8 +148,6 @@ translationServer mantaPort scsynthPort = do
   slidersRef <- newIORef (2000, 2000)
   let fn mantaFd = forever (processPacket keyMap (slidersRef, voiceListRef) mantaFd sc3Fd)
   Osc.Fd.withTransport (Osc.Fd.udp_server mantaPort) fn
-
-type KeyMap = [(Int,Int)]
 
 {- | Load key map
 
@@ -171,3 +170,13 @@ main = do
   let mantaPort = 31416
       sc3Port = 57110
   translationServer mantaPort sc3Port
+
+{-
+
+MantaOsc Messages:
+
+/manta/(continuous|velocity)/button index=(0,3) value=(0,210)
+/manta/(continuous|velocity)/pad index=(0,47) value=(0,210)
+/manta/continuous/slider index=(0,1) value=(0,4096)
+
+-}
