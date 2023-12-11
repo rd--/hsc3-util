@@ -71,7 +71,7 @@ type KeyMap = [(Int,Int)]
 type MessageOpt = (Double, Int, Int)
 
 {- | c_setn message. -}
-setMessage :: MessageOpt -> KeyMap -> Sliders -> Int -> Key -> Osc.Fd.Message
+setMessage :: MessageOpt -> KeyMap -> Sliders -> Int -> Key -> Osc.Message
 setMessage messageOpt keyMap (i, j) v (index, value) =
   let (noteOffset, busZero, busIncrement) = messageOpt
       w = 1
@@ -123,14 +123,14 @@ updateSliders (i,j) message =
              _ -> error "updateSliders?"
     _ -> (i,j)
 
-recvMessage :: Osc.Fd.Udp -> IO Osc.Fd.Message
+recvMessage :: Osc.Fd.Udp -> IO Osc.Message
 recvMessage udpFd = do
   packet <- Osc.Fd.udp_recv_packet udpFd
   case packet of
     Osc.Packet_Bundle _ -> error "recvMessage?"
     Osc.Packet_Message message -> return message
 
-sendMessage :: Osc.Fd.Tcp -> Osc.Fd.Message -> IO ()
+sendMessage :: Osc.Fd.Tcp -> Osc.Message -> IO ()
 sendMessage tcpFd message = Osc.Fd.tcp_send_packet tcpFd (Osc.Packet_Message message)
 
 type MantaState = (IORef Sliders, IORef VoiceList.VoiceList)
