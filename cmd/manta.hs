@@ -67,41 +67,49 @@ type Sliders = (Int,Int)
 -- | Map from key index to relative midi note number.
 type KeyMap = [(Int,Int)]
 
+-- | (noteOffset, busZero, busIncrement)
+type MessageOpt = (Double, Int, Int)
+
 {- | c_setn message. -}
-setMessage :: Double -> KeyMap -> Sliders -> Int -> Key -> Osc.Fd.Message
-setMessage noteOffset keyMap (i, j) v (index, value) =
-  let w = 1
+setMessage :: MessageOpt -> KeyMap -> Sliders -> Int -> Key -> Osc.Fd.Message
+setMessage messageOpt keyMap (i, j) v (index, value) =
+  let (noteOffset, busZero, busIncrement) = messageOpt
+      w = 1
       (x,y) = mantaKeyToXy index
       z = fromIntegral value / 210.0
       p = (noteOffset + fromIntegral (List.lookup_err index keyMap)) / 100.0
   in Sc3.c_setn1
-     (13000 + (v * 10)
+     (busZero + (v * busIncrement)
      ,[w, x, y, z, fromIntegral i / 4096, fromIntegral j / 4096, 0, p])
 
 keyOf :: Int32 -> Int32 -> Key
 keyOf index value = (fromIntegral index, fromIntegral value)
 
--- | (Note-Offset, Key-Map, Sliders, Voice-List)
-type MantaParam = (Double, KeyMap, Sliders, VoiceList.VoiceList)
+-- | (Message-Options, Key-Map, Sliders, Voice-List)
+type MantaParam = (MessageOpt, KeyMap, Sliders, VoiceList.VoiceList)
 
 translateMessage :: MantaParam -> Osc.Message -> Maybe (VoiceList.VoiceList, Osc.Message)
-translateMessage (noteOffset, keyMap, sliders, voiceList) message =
-  case message of
-    Osc.Message "/manta/velocity/pad" [Osc.Int32 index, Osc.Int32 0]
-      -> case VoiceList.freeId voiceList (fromIntegral index) of
-           Just (v,voiceList') ->
-             Just (voiceList', Sc3.c_setn1 (13000 + (v * 10), [0]))
-           Nothing -> Nothing
-    Osc.Message "/manta/velocity/pad" [Osc.Int32 index, Osc.Int32 value]
-      -> case VoiceList.allocId voiceList (fromIntegral index) of
-           Just (v, voiceList') ->
-             Just (voiceList', setMessage noteOffset keyMap sliders v (keyOf index value))
-           Nothing -> Nothing
-    Osc.Message "/manta/continuous/pad" [Osc.Int32 index, Osc.Int32 value]
-      -> case VoiceList.readId voiceList (fromIntegral index) of
-           Just v -> Just (voiceList, setMessage noteOffset keyMap sliders v (keyOf index value))
-           Nothing -> Nothing
-    _ -> Nothing
+translateMessage (messageOpt, keyMap, sliders, voiceList) message =
+  let (_, busZero, busIncrement) = messageOpt
+  in case message of
+       Osc.Message "/manta/velocity/pad" [Osc.Int32 index, Osc.Int32 0]
+         -> case VoiceList.freeId voiceList (fromIntegral index) of
+              Just (v,voiceList') ->
+                Just (voiceList', Sc3.c_setn1 (busZero + (v * busIncrement), [0]))
+              Nothing -> Nothing
+       Osc.Message "/manta/velocity/pad" [Osc.Int32 index, Osc.Int32 value]
+         -> case VoiceList.allocId voiceList (fromIntegral index) of
+              Just (v, voiceList') ->
+                Just (voiceList'
+                     ,setMessage messageOpt keyMap sliders v (keyOf index value))
+              Nothing -> Nothing
+       Osc.Message "/manta/continuous/pad" [Osc.Int32 index, Osc.Int32 value]
+         -> case VoiceList.readId voiceList (fromIntegral index) of
+              Just v ->
+                Just (voiceList
+                     ,setMessage messageOpt keyMap sliders v (keyOf index value))
+              Nothing -> Nothing
+       _ -> Nothing
 
 updateSliders :: Sliders -> Osc.Message -> Sliders
 updateSliders (i,j) message =
@@ -133,8 +141,8 @@ processPacket keyMap (slidersRef, voiceListRef) mantaFd sc3Fd = do
   voiceList <- readIORef voiceListRef
   sliders <- readIORef slidersRef
   writeIORef slidersRef (updateSliders sliders message)
-  let noteOffset = 36
-  case translateMessage (noteOffset, keyMap, sliders, voiceList) message of
+  let messageOpt = (36, 13000, 10)
+  case translateMessage (messageOpt, keyMap, sliders, voiceList) message of
     Just (voiceList', answer) -> do
       sendMessage sc3Fd answer
       writeIORef voiceListRef voiceList'

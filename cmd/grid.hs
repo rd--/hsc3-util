@@ -1,10 +1,9 @@
 import Text.Printf {- base -}
 
-import Data.CG.Minus.Plain {- hcg-minus -}
+import qualified Music.Theory.List as List {- hmt-base -}
+import Music.Theory.Geometry.Vector {- hmt-base -}
 
-import qualified Music.Theory.List as List {- hmt -}
 import qualified Music.Theory.Pitch as Pitch {- hmt -}
-import qualified Music.Theory.Pitch.Spelling.Table as Pitch {- hmt -}
 import qualified Music.Theory.Tuning.Scala as Scala {- hmt -}
 import qualified Music.Theory.Tuning.Scala.Mode as Mode {- hmt -}
 
@@ -19,9 +18,11 @@ type Grid t = [[t]]
 grid_map :: (t -> u) -> Grid t -> Grid u
 grid_map f = map (map f)
 
--- | Row-order sequence of all grid indices.
---
--- > grid_indices (2,3) == [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2)]
+{- | Row-order sequence of all grid indices.
+
+>>> grid_indices (2,3)
+[(0,0),(0,1),(0,2),(1,0),(1,1),(1,2)]
+-}
 grid_indices :: V2 Int -> [V2 Int]
 grid_indices (nr,nc) = [(r,c) | r <- [0 .. nr - 1], c <- [0 .. nc - 1]]
 
@@ -29,15 +30,18 @@ grid_indices (nr,nc) = [(r,c) | r <- [0 .. nr - 1], c <- [0 .. nc - 1]]
 grid_ix :: Grid t -> V2 Int -> t
 grid_ix g (r,c) = (g !! r) !! c
 
--- | Increment for axis, for axis-aligned grid of /n/ places (ie. cell diameter)
---
--- > axis_incr (0,1) 10 == 0.1
+{- | Increment for axis, for axis-aligned grid of /n/ places (ie. cell diameter)
+
+>>> axis_incr (0,1) 10
+0.1
+-}
 axis_incr :: (Fractional n, Enum n) => Range n -> Int -> n
 axis_incr (lhs,rhs) n = (rhs - lhs) / fromIntegral n
 
 {- | Locations along axis, for axis-aligned grid.
 
-> map (axis_loc (0,100)) [1,2,5,10] == [[50],[25,75],[10,30,50,70,90],[5,15,25,35,45,55,65,75,85,95]]
+>>> map (axis_loc (0,100)) [1,2,5,10]
+[[50.0],[25.0,75.0],[10.0,30.0,50.0,70.0,90.0],[5.0,15.0,25.0,35.0,45.0,55.0,65.0,75.0,85.0,95.0]]
 -}
 axis_loc :: (Fractional n, Enum n) => Range n -> Int -> [n]
 axis_loc (lhs,rhs) n =
@@ -65,7 +69,8 @@ grid_coord_unit = grid_coord ((0,1),(0,1))
 
 {- | Given x and y axis increments (in midi note numbers) and an initial midi note number, generate pitch grid.
 
-> grid_midi_pitch ([1],[4]) (4,13) 60
+>>> grid_midi_pitch ([1],[4]) (4,13) 60
+[[60,61,62,63,64,65,66,67,68,69,70,71,72],[64,65,66,67,68,69,70,71,72,73,74,75,76],[68,69,70,71,72,73,74,75,76,77,78,79,80],[72,73,74,75,76,77,78,79,80,81,82,83,84]]
 -}
 grid_midi_pitch :: (Num n,Enum n) => V2 [n] -> V2 Int -> n -> Grid n
 grid_midi_pitch (x_incr,y_incr) (nr,nc) p0 =
@@ -124,7 +129,7 @@ scl_fmidi_k :: Scala.Scale -> Int -> [Double]
 scl_fmidi_k scl k =
   let o = Scala.pitch_cents (Scala.scale_octave_err scl) * 0.01
       d = Scala.scale_degree scl
-      c = Scala.scale_cents scl
+      c = Scala.scale_cents True scl
   in take k (concatMap (\i -> take d (map ((+ i) . (* 0.01)) c)) [0,o ..])
 
 scl_x_axis_proportional :: Scala.Scale -> Int -> Double -> [(Double,Double)]
