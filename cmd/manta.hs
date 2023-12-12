@@ -187,4 +187,22 @@ MantaOsc Messages:
 /manta/(continuous|velocity)/pad index=(0,47) value=(0,210)
 /manta/continuous/slider index=(0,1) value=(0,4096)
 
+Manta dimensions:
+
+Hexagon size = 25mm
+Hexagon gap = 4mm
+Slider height = 9mm
+Slider width = 82mm / 92mm
+Slider vertical gap = 13mm
+Slider horizontal gap = 16mm
+Button diameter = 10mm
+Button horizontal gap = 18mm
+Button vertical gap = 12mm
+Hexagon to left/right edge = 8mm / 22mm
+Hexagon to lower edge = 4mm
+Width = 25.8mm
+Height = 21.2mm
+
+8 * 25 + 7 * 4 + 8 + 22 = 258
+
 -}
