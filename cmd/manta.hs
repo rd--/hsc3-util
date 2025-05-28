@@ -15,7 +15,10 @@ import Data.Int {- base -}
 import qualified Music.Theory.List as List {- hmt-base -}
 
 import qualified Sound.Osc as Osc {- hosc -}
-import qualified Sound.Osc.Fd as Osc.Fd {- hosc -}
+import qualified Sound.Osc.Transport.Fd as Osc.Fd {- hosc -}
+--import qualified Sound.Osc.Transport.Fd.Socket as Osc.Fd.Socket {- hosc -}
+import qualified Sound.Osc.Transport.Fd.Udp as Osc.Fd.Udp {- hosc -}
+import qualified Sound.Osc.Transport.Fd.Tcp as Osc.Fd.Tcp {- hosc -}
 
 import qualified Sound.Midi.VoiceList as VoiceList {- midi-osc -}
 
@@ -123,19 +126,19 @@ updateSliders (i,j) message =
              _ -> error "updateSliders?"
     _ -> (i,j)
 
-recvMessage :: Osc.Fd.Udp -> IO Osc.Message
+recvMessage :: Osc.Fd.Udp.Udp -> IO Osc.Message
 recvMessage udpFd = do
-  packet <- Osc.Fd.udp_recv_packet udpFd
+  packet <- Osc.Fd.Udp.udp_recv_packet udpFd
   case packet of
     Osc.Packet_Bundle _ -> error "recvMessage?"
     Osc.Packet_Message message -> return message
 
-sendMessage :: Osc.Fd.Tcp -> Osc.Message -> IO ()
-sendMessage tcpFd message = Osc.Fd.tcp_send_packet tcpFd (Osc.Packet_Message message)
+sendMessage :: Osc.Fd.Tcp.Tcp -> Osc.Message -> IO ()
+sendMessage tcpFd message = Osc.Fd.Tcp.tcp_send_packet tcpFd (Osc.Packet_Message message)
 
 type MantaState = (IORef Sliders, IORef VoiceList.VoiceList)
 
-processPacket :: KeyMap -> MantaState -> Osc.Fd.Udp -> Osc.Fd.Tcp -> IO ()
+processPacket :: KeyMap -> MantaState -> Osc.Fd.Udp.Udp -> Osc.Fd.Tcp.Tcp -> IO ()
 processPacket keyMap (slidersRef, voiceListRef) mantaFd sc3Fd = do
   message <- recvMessage mantaFd
   voiceList <- readIORef voiceListRef
@@ -150,12 +153,12 @@ processPacket keyMap (slidersRef, voiceListRef) mantaFd sc3Fd = do
 
 translationServer :: Int -> Int -> IO b
 translationServer mantaPort scsynthPort = do
-  sc3Fd <- Osc.Fd.openTcp "127.0.0.1" scsynthPort
+  sc3Fd <- Osc.Fd.Tcp.openTcp "127.0.0.1" scsynthPort -- Tcp
   keyMap <- loadKeyMap "/home/rohan/opt/src/ssfrr/libmanta/Wicki-Hayden.map" -- HarmonicTable
   voiceListRef <- newIORef (replicate 16 Nothing)
   slidersRef <- newIORef (2000, 2000)
   let fn mantaFd = forever (processPacket keyMap (slidersRef, voiceListRef) mantaFd sc3Fd)
-  Osc.Fd.withTransport (Osc.Fd.udp_server mantaPort) fn
+  Osc.Fd.withTransport (Osc.Fd.Udp.udp_server mantaPort) fn
 
 {- | Load key map
 

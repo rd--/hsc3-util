@@ -10,13 +10,13 @@ import Sound.Sc3.Common.Base {- hsc3 -}
 import qualified Music.Theory.List as List {- hmt-base -}
 import qualified Music.Theory.Tuple as Tuple {- hmt-base -}
 
-type Event t = Tuple.T8 t
+type Event t = Tuple.T10 t
 
 -- | (time,voice,event)
 type EventTrace = (Double,Int,Event Double)
 
 ccEvent_from_list :: [t] -> Event t
-ccEvent_from_list = Tuple.t8_from_list
+ccEvent_from_list = Tuple.t10_from_list
 
 -- | Load Csv trace file
 ccEventTrace_load :: FilePath -> IO [EventTrace]
@@ -35,7 +35,7 @@ ccEventTrace_dt tr =
 
 -- | Pause for delta time, then send trace event
 ccEventTrace_send :: (MonadIO m,SendOsc m) => (Double,EventTrace) -> m ()
-ccEventTrace_send (dt,(_,v,(w,x,y,z,i,j,k,p))) = do
+ccEventTrace_send (dt,(_,v,(w,x,y,z,i,j,k,p,_px,_py))) = do
   let msg = c_setn1 (13000 + (v * 10),[w,x,y,z,i,j,k,p])
   pauseThread dt
   sendMessage msg
@@ -46,7 +46,7 @@ ccEventTrace_replay tr = withSc3 (mapM_ ccEventTrace_send (zip (ccEventTrace_dt 
 
 -- | Select w=0 events
 ccEventTrace_is_end :: EventTrace -> Bool
-ccEventTrace_is_end (_,_,(w,_,_,_,_,_,_,_)) = not (w > 0)
+ccEventTrace_is_end (_,_,(w,_,_,_,_,_,_,_,_,_)) = not (w > 0)
 
 -- | Re-assign k in trace using a strict lowest voice number not used algorithm.
 ccEventTrace_reassign :: [EventTrace] -> [EventTrace]
@@ -61,14 +61,14 @@ ccEventTrace_reassign tr =
       rw_next_k rw = List.head_err (filter (\i -> i `notElem` (map snd rw)) [0..16])
       rw_delete_k rw i = filter (not . (== i) . fst) rw
       f rw (tm,k,e) =
-        let (w,_,_,_,_,_,_,_) = e
+        let (w,_,_,_,_,_,_,_,_,_) = e
         in case rw_get_k rw k of
              Nothing -> let k' = rw_next_k rw in (((k,k') : rw),(tm,k',e))
              Just k' -> (if w > 0 then rw else rw_delete_k rw k,(tm,k',e))
   in snd (mapAccumL f [] tr)
 
 {-
-tr <- ccEventTrace_load "/home/rohan/sw/hsc3-util/cmd/trace.csv"
+tr <- ccEventTrace_load "/home/rohan/trace.csv"
 tr' = ccEventTrace_reassign tr
 ccEventTrace_replay tr'
 -}

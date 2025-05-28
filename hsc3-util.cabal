@@ -1,16 +1,16 @@
 cabal-version:     2.4
 name:              hsc3-util
-version:           0.21
+version:           0.22
 synopsis:          Haskell SuperCollider Utilities
 description:       Haskell SuperCollider Utilities
 license:           GPL-3.0-only
 category:          Sound
-copyright:         (c) Rohan Drape and others, 2005-2023
+copyright:         (c) Rohan Drape and others, 2005-2025
 author:            Rohan Drape
 maintainer:        rd@rohandrape.net
 stability:         Experimental
 homepage:          http://rohandrape.net/t/hsc3-util
-tested-with:       GHC == 9.4.3
+tested-with:       GHC == 9.12.2
 build-type:        Simple
 
 data-files:        README.md
@@ -19,13 +19,13 @@ executable hsc3-scsynth
   build-depends:    base == 4.* && < 5,
                     containers,
                     filepath,
-                    hosc == 0.21.*,
-                    hsc3 == 0.21.*,
-                    hsc3-sf == 0.21.*
+                    hosc == 0.22.*,
+                    hsc3 == 0.22.*,
+                    hsc3-sf == 0.22.*
   hs-source-dirs:   cmd
   main-is:          scsynth.hs
   default-language: Haskell2010
-  ghc-options:      -Wall -fwarn-tabs
+  ghc-options:      -Wall -Wno-x-partial -Wno-incomplete-uni-patterns -fwarn-tabs
 
 source-repository  head
   type:            git
