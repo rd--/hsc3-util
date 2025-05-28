@@ -16,12 +16,12 @@ import qualified Music.Theory.List as List {- hmt-base -}
 
 import qualified Sound.Osc as Osc {- hosc -}
 import qualified Sound.Osc.Transport.Fd as Osc.Fd {- hosc -}
---import qualified Sound.Osc.Transport.Fd.Socket as Osc.Fd.Socket {- hosc -}
+import qualified Sound.Osc.Transport.Fd.Socket as Osc.Fd.Socket {- hosc -}
 import qualified Sound.Osc.Transport.Fd.Udp as Osc.Fd.Udp {- hosc -}
-import qualified Sound.Osc.Transport.Fd.Tcp as Osc.Fd.Tcp {- hosc -}
 
 import qualified Sound.Midi.VoiceList as VoiceList {- midi-osc -}
 
+import qualified Sound.Sc3.Server.Transport.Fd as Sc3 {- hsc3 -}
 import qualified Sound.Sc3.Server.Command.Plain as Sc3 {- hsc3 -}
 
 {- | Given key number (0,47) return (row,column).
@@ -133,12 +133,12 @@ recvMessage udpFd = do
     Osc.Packet_Bundle _ -> error "recvMessage?"
     Osc.Packet_Message message -> return message
 
-sendMessage :: Osc.Fd.Tcp.Tcp -> Osc.Message -> IO ()
-sendMessage tcpFd message = Osc.Fd.Tcp.tcp_send_packet tcpFd (Osc.Packet_Message message)
+sendMessage :: Osc.Fd.Socket.OscSocket -> Osc.Message -> IO ()
+sendMessage fd message = Osc.Fd.sendPacket fd (Osc.Packet_Message message)
 
 type MantaState = (IORef Sliders, IORef VoiceList.VoiceList)
 
-processPacket :: KeyMap -> MantaState -> Osc.Fd.Udp.Udp -> Osc.Fd.Tcp.Tcp -> IO ()
+processPacket :: KeyMap -> MantaState -> Osc.Fd.Udp.Udp -> Osc.Fd.Socket.OscSocket -> IO ()
 processPacket keyMap (slidersRef, voiceListRef) mantaFd sc3Fd = do
   message <- recvMessage mantaFd
   voiceList <- readIORef voiceListRef
@@ -151,9 +151,10 @@ processPacket keyMap (slidersRef, voiceListRef) mantaFd sc3Fd = do
       writeIORef voiceListRef voiceList'
     Nothing -> return ()
 
-translationServer :: Int -> Int -> IO b
-translationServer mantaPort scsynthPort = do
-  sc3Fd <- Osc.Fd.Tcp.openTcp "127.0.0.1" scsynthPort -- Tcp
+translationServer :: Int -> IO b
+translationServer mantaPort = do
+  addr <- Sc3.defaultSc3OscSocketAddress
+  sc3Fd <- Osc.Fd.Socket.openOscSocket addr
   keyMap <- loadKeyMap "/home/rohan/opt/src/ssfrr/libmanta/Wicki-Hayden.map" -- HarmonicTable
   voiceListRef <- newIORef (replicate 16 Nothing)
   slidersRef <- newIORef (2000, 2000)
@@ -179,8 +180,7 @@ loadKeyMap fileName = do
 main :: IO ()
 main = do
   let mantaPort = 31416
-      sc3Port = 57110
-  translationServer mantaPort sc3Port
+  translationServer mantaPort
 
 {-
 
