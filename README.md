@@ -10,7 +10,7 @@ haskell supercollider3 utilities
 - [scsynth](http://rohandrape.net/?t=hsc3-util&e=md/scsynth.md)
 
 tested-with:
-[gcc](http://gcc.gnu.org/) 10.2.0
+[gcc](http://gcc.gnu.org/) 12.2.0
 [clang](https://clang.llvm.org/)-11.0.1
 jackd1-0.125
 jackd2-1.9.17

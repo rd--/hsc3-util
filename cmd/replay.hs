@@ -69,6 +69,8 @@ ccEventTrace_reassign tr =
 
 {-
 tr <- ccEventTrace_load "/home/rohan/trace.csv"
+ccEventTrace_replay tr
+
 tr' = ccEventTrace_reassign tr
 ccEventTrace_replay tr'
 -}
