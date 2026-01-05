@@ -1,11 +1,14 @@
 all:
 	(cd cmd ; make all)
 
+install:
+	cabal v1-install --allow-newer
+
 clean:
 	rm -fR dist dist-newstyle
 	(cd cmd ; make clean)
 
-install:
+mk-cmd:
 	(cd cmd ; make install)
 
 push-all:
