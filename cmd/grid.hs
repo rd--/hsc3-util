@@ -1,15 +1,29 @@
 import Text.Printf {- base -}
 
 import qualified Music.Theory.List as List {- hmt-base -}
-import Music.Theory.Geometry.Vector {- hmt-base -}
+--import qualified Music.Theory.Geometry.Vector as Vector {- hmt-base -}
 
 import qualified Music.Theory.Pitch as Pitch {- hmt -}
 import qualified Music.Theory.Tuning.Scala as Scala {- hmt -}
 import qualified Music.Theory.Tuning.Scala.Mode as Mode {- hmt -}
 
+type V2 n = (n,n)
+type V3 n = (n,n,n)
+
 type Range n = V2 n
 
 type Xy_Range n = V2 (Range n)
+
+-- | Dimensions (RowCount/Width,ColumnCount/Height)
+type Dimensions n = V2 n
+
+-- | Coordinate (Row,Column)
+type RowColumn = V2 Int
+
+-- | Coordinate (X,Y)
+type Xy t = V2 t
+
+type Xy_Increments t = V2 [t]
 
 -- | Row-order grid.  All rows have an equal number of columns.
 type Grid t = [[t]]
@@ -23,11 +37,11 @@ grid_map f = map (map f)
 >>> grid_indices (2,3)
 [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2)]
 -}
-grid_indices :: V2 Int -> [V2 Int]
+grid_indices :: Dimensions Int -> [RowColumn]
 grid_indices (nr,nc) = [(r,c) | r <- [0 .. nr - 1], c <- [0 .. nc - 1]]
 
 -- | Lookup element at grid.
-grid_ix :: Grid t -> V2 Int -> t
+grid_ix :: Grid t -> RowColumn -> t
 grid_ix g (r,c) = (g !! r) !! c
 
 {- | Increment for axis, for axis-aligned grid of /n/ places (ie. cell diameter)
@@ -57,14 +71,14 @@ I.e. xos=[0,0.5] is a hexagonal grid.  xos=[0] is a square grid.
 
 > grid_coord ((0,100),(0,100)) [0,0.5] (4,10)
 -}
-grid_coord :: (Fractional n, Enum n) => Xy_Range n -> [n] -> V2 Int -> Grid (V2 n)
+grid_coord :: (Fractional n, Enum n) => Xy_Range n -> [n] -> Dimensions Int -> Grid (Xy n)
 grid_coord (x_rng,y_rng) xos (nr,nc) =
   let x_incr = axis_incr x_rng nc
       x_loc = axis_loc x_rng nc
       y_loc = axis_loc y_rng nr
   in map (\(y,xo) -> map (\x -> (x + xo,y)) x_loc) (zip y_loc (map (* x_incr) (cycle xos)))
 
-grid_coord_unit :: (Fractional n, Enum n) => [n] -> V2 Int -> Grid (V2 n)
+grid_coord_unit :: (Fractional n, Enum n) => [n] -> Dimensions Int -> Grid (Xy n)
 grid_coord_unit = grid_coord ((0,1),(0,1))
 
 {- | Given x and y axis increments (in midi note numbers) and an initial midi note number, generate pitch grid.
@@ -72,17 +86,17 @@ grid_coord_unit = grid_coord ((0,1),(0,1))
 >>> grid_midi_pitch ([1],[4]) (4,13) 60
 [[60,61,62,63,64,65,66,67,68,69,70,71,72],[64,65,66,67,68,69,70,71,72,73,74,75,76],[68,69,70,71,72,73,74,75,76,77,78,79,80],[72,73,74,75,76,77,78,79,80,81,82,83,84]]
 -}
-grid_midi_pitch :: (Num n,Enum n) => V2 [n] -> V2 Int -> n -> Grid n
+grid_midi_pitch :: (Num n,Enum n) => Xy_Increments n -> Dimensions Int -> n -> Grid n
 grid_midi_pitch (x_incr,y_incr) (nr,nc) p0 =
   let x_seq x = take nc (List.dx_d x (cycle x_incr))
       y_seq y = take nr (List.dx_d y (cycle y_incr))
   in map x_seq (y_seq p0)
 
-{- | (i,j,x,y,p,w,h,txt,4,c...) CSV table
+{- | (i,j,x,y,p,w,h,txt,4,c...) Csv table
 
 p is a unit value (in 0-1), not a midi note number.  The txt field gives the ISO note name for p.
 -}
-grid_csv :: V2 Int -> V2 Double -> Grid (V2 Double) -> Grid Double -> Grid [V2 Double] -> [String]
+grid_csv :: Dimensions Int -> Dimensions Double -> Grid (Xy Double) -> Grid Double -> Grid [Xy Double] -> [String]
 grid_csv dm (w,h) grid_c grid_p grid_r =
   let f ix = let (x,y) = grid_ix grid_c ix
                  p = grid_ix grid_p ix
@@ -94,17 +108,21 @@ grid_csv dm (w,h) grid_c grid_p grid_r =
                 i j x y (p / 127.0) w h txt x1 y1 x2 y2 x3 y3 x4 y4
   in map f (grid_indices dm)
 
--- > grid_cell_dimensions (2,10)
-grid_cell_dimensions :: V2 Int -> V2 Double
+{- | Reciprocal, swapped
+
+>>> grid_cell_dimensions (2,10)
+(0.1,0.5)
+-}
+grid_cell_dimensions :: Dimensions Int -> Dimensions Double
 grid_cell_dimensions (nr,nc) = (1 / fromIntegral nc,1 / fromIntegral nr)
 
-grid_rect :: V2 Double -> V2 Double -> [V2 Double]
+grid_rect :: Dimensions Double -> Xy Double -> [Xy Double]
 grid_rect (w,h) (x,y) =
   let dx = w / 2
       dy = h / 2
   in [(x - dx,y - dy),(x + dx,y - dy),(x + dx,y + dy),(x - dx,y + dy)]
 
-gen_grid_csv :: [Double] -> V2 Int -> V2 [Double] -> Double -> [String]
+gen_grid_csv :: [Double] -> Dimensions Int -> Xy_Increments Double -> Double -> [String]
 gen_grid_csv xos dm incr p0 =
   let c = grid_coord_unit xos dm
       p = grid_midi_pitch incr dm p0
@@ -132,14 +150,14 @@ scl_fmidi_k scl k =
       c = Scala.scale_cents True scl
   in take k (concatMap (\i -> take d (map ((+ i) . (* 0.01)) c)) [0,o ..])
 
-scl_x_axis_proportional :: Scala.Scale -> Int -> Double -> [(Double,Double)]
+scl_x_axis_proportional :: Scala.Scale -> Int -> Double -> [V2 Double]
 scl_x_axis_proportional scl k m0 =
   let m = scl_fmidi_k scl k
       l = last m
       x = map (/ l) m
   in zip x (map (+ m0) m)
 
-x_axis_csv :: [(Double,Double,Double)] -> [String]
+x_axis_csv :: [V3 Double] -> [String]
 x_axis_csv e =
   let f c (x,p,w) = printf "0,%d,%.4f,0.5,%.4f,%.4f,1.0,\"%.4f\",0" c x p w p
   in zipWith f [0::Int ..] e
